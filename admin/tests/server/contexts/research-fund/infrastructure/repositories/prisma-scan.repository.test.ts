@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { ScanJobError } from "@/server/contexts/research-fund/domain/models/scan-job";
 import { PrismaScanRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-scan.repository";
 
 function setup() {
@@ -6,12 +7,18 @@ function setup() {
   const document = { create: jest.fn() };
   const job = {
     create: jest.fn(),
+    createMany: jest.fn(),
     findMany: jest.fn(),
     update: jest.fn(),
     updateMany: jest.fn(),
     groupBy: jest.fn(),
   };
-  const entry = { createManyAndReturn: jest.fn() };
+  const entry = {
+    createManyAndReturn: jest.fn(),
+    findMany: jest.fn(),
+    count: jest.fn(),
+    deleteMany: jest.fn(),
+  };
   const line = { createMany: jest.fn() };
   const account = { findMany: jest.fn() };
   const tx = {
@@ -21,12 +28,14 @@ function setup() {
     researchFundJournalEntry: entry,
     researchFundJournalLine: line,
     researchFundAccount: account,
+    $queryRaw: jest.fn(),
   };
   const client = {
     ...tx,
     $transaction: jest.fn((run: (tx: unknown) => unknown) => run(tx)),
   };
   return {
+    tx,
     batch,
     document,
     job,
@@ -164,6 +173,7 @@ const CLAIMED_ROW = {
     originalFilename: "IMG_1.jpg",
   },
   prompt: { body: "議員室プロンプト" },
+  rereadInstruction: null,
 };
 
 test("帳簿の未処理ジョブを待機中・処理中に分けて数える", async () => {
@@ -198,6 +208,7 @@ test("待機中のジョブを古い順に処理中へ移し、読み取りに�
       mime: "image/jpeg",
       originalFilename: "IMG_1.jpg",
       officePrompt: "議員室プロンプト",
+      rereadInstruction: null,
     },
   ]);
   expect(job.findMany).toHaveBeenCalledWith(
@@ -239,6 +250,7 @@ const COMPLETE_INPUT = {
   documentId: "42",
   rawJson: { date: "2026-04-01" },
   userId: "user-1",
+  replaceDrafts: false,
   entries: [
     {
       entryDate: "2026-04-01",
@@ -328,6 +340,126 @@ test("一部の仕訳だけ既にある場合は新しく作れた分にだけ�
   expect(line.createMany).toHaveBeenCalledWith({
     data: second.lines.map((l) => ({ ...l, entryId: BigInt(102) })),
   });
+});
+
+test("通常のスキャンでは既存の仕訳を消さない", async () => {
+  const { entry, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  await repository.completeJob(COMPLETE_INPUT);
+  expect(entry.count).not.toHaveBeenCalled();
+  expect(entry.deleteMany).not.toHaveBeenCalled();
+});
+
+test("読み直しでは書類の下書きを消してから新しい下書きを作る（同じトランザクション）", async () => {
+  const { tx, entry, line, job, client, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
+  expect(client.$transaction).toHaveBeenCalledTimes(1);
+  expect(entry.count).toHaveBeenCalledWith({
+    where: { bookId: BigInt(12), documentId: BigInt(42), status: { not: "draft" } },
+  });
+  expect(entry.deleteMany).toHaveBeenCalledWith({
+    where: { bookId: BigInt(12), documentId: BigInt(42), status: "draft" },
+  });
+  // 同じ書類の読み直しと直列化するため、消す前に書類の行をロックする
+  const [sql, ...values] = tx.$queryRaw.mock.calls[0];
+  expect(sql.join("?")).toContain("FOR UPDATE");
+  expect(values).toEqual([BigInt(42)]);
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.deleteMany.mock.invocationCallOrder[0],
+  );
+  // 消して行ロックを取ってから数えるので、並行して確認済にされた仕訳を見落とさない
+  expect(entry.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.count.mock.invocationCallOrder[0],
+  );
+  // 消したあとに作るので、元の下書きと同じ hash でも読み飛ばされず二重にもならない
+  expect(entry.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.createManyAndReturn.mock.invocationCallOrder[0],
+  );
+  expect(line.createMany).toHaveBeenCalled();
+  expect(job.update).toHaveBeenCalledWith(
+    expect.objectContaining({ data: expect.objectContaining({ status: "succeeded" }) }),
+  );
+});
+
+test("読み直しの時点で確認済・公開中の仕訳がある書類は、新しい下書きを作らずに失敗させる", async () => {
+  const { entry, job, repository } = setup();
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.count.mockResolvedValue(1);
+  // 例外でトランザクションが巻き戻るので、先に消した下書きも元に戻る
+  await expect(repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true })).rejects.toThrow(
+    ScanJobError,
+  );
+  expect(entry.createManyAndReturn).not.toHaveBeenCalled();
+  expect(job.update).not.toHaveBeenCalled();
+});
+
+test("読み直しのバッチを作り、既存の書類ごとに指示つきのジョブを作る", async () => {
+  const { batch, document, job, client, repository } = setup();
+  batch.create.mockResolvedValue({ id: BigInt(100) });
+  await expect(
+    repository.createRereadBatch({
+      bookId: "12",
+      uploadedById: "user-1",
+      promptId: "7",
+      model: "claude-sonnet-5",
+      documentIds: ["42", "43"],
+      instruction: "別の科目に分けてください",
+    }),
+  ).resolves.toBe("100");
+  expect(client.$transaction).toHaveBeenCalled();
+  // 書類は作り直さない（元のバッチに属したまま）
+  expect(document.create).not.toHaveBeenCalled();
+  expect(job.createMany).toHaveBeenCalledWith({
+    data: ["42", "43"].map((documentId) => ({
+      batchId: BigInt(100),
+      documentId: BigInt(documentId),
+      promptId: BigInt(7),
+      model: "claude-sonnet-5",
+      rereadInstruction: "別の科目に分けてください",
+    })),
+  });
+});
+
+test("選んだ下書きの書類を重複なく返し、確認済・公開中を含むかを添える", async () => {
+  const { entry, repository } = setup();
+  entry.findMany
+    .mockResolvedValueOnce([{ documentId: BigInt(42) }, { documentId: BigInt(43) }])
+    .mockResolvedValueOnce([{ documentId: BigInt(43) }]);
+  await expect(repository.findRereadCandidates("12", ["101", "102"])).resolves.toEqual([
+    { documentId: "42", hasReviewedEntries: false },
+    { documentId: "43", hasReviewedEntries: true },
+  ]);
+  // 書類の紐づく帳簿の下書きだけが候補になる
+  expect(entry.findMany).toHaveBeenNthCalledWith(1, {
+    where: {
+      bookId: BigInt(12),
+      id: { in: [BigInt(101), BigInt(102)] },
+      status: "draft",
+      documentId: { not: null },
+    },
+    select: { documentId: true },
+    distinct: ["documentId"],
+    orderBy: { documentId: "asc" },
+  });
+  expect(entry.findMany).toHaveBeenNthCalledWith(2, {
+    where: {
+      bookId: BigInt(12),
+      documentId: { in: [BigInt(42), BigInt(43)] },
+      status: { not: "draft" },
+    },
+    select: { documentId: true },
+    distinct: ["documentId"],
+  });
+});
+
+test("書類の紐づく下書きがなければ候補は空", async () => {
+  const { entry, repository } = setup();
+  entry.findMany.mockResolvedValueOnce([]);
+  await expect(repository.findRereadCandidates("12", ["101"])).resolves.toEqual([]);
+  expect(entry.findMany).toHaveBeenCalledTimes(1);
 });
 
 test("ジョブを失敗にしてエラーを記録する", async () => {

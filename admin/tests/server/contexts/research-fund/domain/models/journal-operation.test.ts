@@ -1,6 +1,6 @@
 import { JournalOperation, type OperableEntry } from "@/server/contexts/research-fund/domain/models/journal-operation";
 
-const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200 };
+const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi" };
 const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "settle", "unsettle"] as const;
 type Operation = (typeof operations)[number];
 function judge(operation: Operation, entry: OperableEntry) {
@@ -61,8 +61,36 @@ describe("却下理由", () => {
   });
 });
 
+describe("JournalOperation.approve", () => {
+  const needsReview = { ...base, accountKey: "needs-review" };
+  it("科目が要確認の下書きは確認済にできず、まとめて操作では除外として扱う", () => {
+    expect(JournalOperation.approve(needsReview)).toEqual({
+      one: "科目を確定してから確認済にしてください",
+      many: "「タクシー代」は科目が要確認です",
+      bulkExcludable: true,
+    });
+  });
+  it("科目を確定する保存なら、要確認の下書きでも確認済にできる", () => {
+    expect(JournalOperation.approve(needsReview, "taxi")).toBeNull();
+  });
+  it("科目を要確認に変える保存は確認済にできない", () => {
+    expect(JournalOperation.approve(base, "needs-review")?.one).toBe("科目を確定してから確認済にしてください");
+  });
+  it("下書きでない仕訳は、科目が要確認でも除外ではなく拒否する", () => {
+    const rejection = JournalOperation.approve({ ...needsReview, status: "approved" });
+    expect(rejection?.many).toBe("「タクシー代」は下書きではありません");
+    expect(rejection?.bulkExcludable).toBeUndefined();
+  });
+});
+
 describe("JournalOperation.edit", () => {
   const settled = { ...base, status: "approved" as const, advancedBy: "秘書A", settledAt: "2026-09-01" };
+  it("確認済の仕訳は科目を要確認に戻せない", () => {
+    expect(JournalOperation.edit({ ...base, status: "approved" }, base.amount, "needs-review")?.one).toBe("科目を確定してから確認済にしてください");
+  });
+  it("下書きは科目が要確認のままでも保存できる", () => {
+    expect(JournalOperation.edit(base, base.amount, "needs-review")).toBeNull();
+  });
   it("精算済の仕訳は金額を変えなければ編集できる", () => {
     expect(JournalOperation.edit(settled, 1200)).toBeNull();
   });

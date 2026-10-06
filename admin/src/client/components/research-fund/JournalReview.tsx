@@ -314,21 +314,25 @@ export function JournalReview({
       }
     });
   }
-  function settleChecked() {
-    const targets = checkedEntries.map((e) => ({ id: e.id, updatedAt: e.updatedAt }));
+  /**
+   * 立替をまとめて精算済にする（1 件の立替者の欄からの精算も選択 1 件として同じ経路で送る）。
+   * 精算日の検証と精算できる条件はサーバー側（usecase とドメイン）で判定する。
+   */
+  function settle(entriesToSettle: readonly ReviewEntry[], date: string) {
+    const targets = entriesToSettle.map((e) => ({ id: e.id, updatedAt: e.updatedAt }));
     startTransition(async () => {
       try {
         const result = await mutateJournalReview(target.politicianId, target.bookId, {
           type: "settle-many",
           targets,
-          settledAt,
+          settledAt: date,
         });
         if (!result.success) {
           toast.error(result.error);
           return;
         }
-        const { settled = 0, settledAt: date = settledAt } = result.settlement ?? {};
-        toast.success(`${settled}件の立替を精算済（${date}）にしました`);
+        const { settled = 0, settledAt: saved = date } = result.settlement ?? {};
+        toast.success(`${settled}件の立替を精算済（${saved.replaceAll("-", ".")}）にしました`);
         setSettling(false);
         setChecked([]);
         router.refresh();
@@ -764,7 +768,10 @@ export function JournalReview({
                           )}
                           {entry.settledAt !== null && (
                             <span className="rounded-full border bg-accent px-2 text-accent-foreground">
-                              精算済 <span className="font-latin">{entry.settledAt}</span>
+                              精算済{" "}
+                              <span className="font-latin">
+                                {entry.settledAt.replaceAll("-", ".")}
+                              </span>
                             </span>
                           )}
                         </div>
@@ -840,6 +847,10 @@ export function JournalReview({
                     advancers={advancers}
                     pending={pending}
                     onSave={(advancedBy) => assignAdvancedBy([selected], advancedBy)}
+                    onSettle={(date) => {
+                      // 仕訳の編集フォームに未保存の変更があると、精算後の再読み込みで失われるので確認する
+                      if (allowLeave()) settle([selected], date);
+                    }}
                     onUnsettle={() => unsettle([selected])}
                   />
                 )}
@@ -1106,7 +1117,10 @@ export function JournalReview({
             <Button variant="outline" disabled={pending} onClick={() => setSettling(false)}>
               キャンセル
             </Button>
-            <Button disabled={pending || settledAt === ""} onClick={settleChecked}>
+            <Button
+              disabled={pending || settledAt === ""}
+              onClick={() => settle(checkedEntries, settledAt)}
+            >
               精算済にする
             </Button>
           </DialogFooter>

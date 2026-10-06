@@ -60,6 +60,11 @@ export interface ReviewEntry extends JournalEdit, JournalEntry {
   /** 支払先を誰が紐づけたか。支払先があるときだけ持つ */
   payeeLinkSource: PayeeLinkSource | null;
   /**
+   * 領収書等を徴し難かった事情。null なら未入力。書類の無い支出だけが持てる（domain/models/receipt-absence）。
+   * 支払先と同じく、公開内容・複式の行・hash に影響しない別系統の更新として扱う。
+   */
+  receiptAbsenceReason: string | null;
+  /**
    * この仕訳を作った読み取りで書類から読み取った発行元。支払先が未設定のとき、支払先を作る候補として出す。
    * 手入力の仕訳・発行元を出さない古い形式の読み取り結果では null
    */

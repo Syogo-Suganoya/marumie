@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>marumie コード逆引き</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 上に構成図（全体 → コンテキスト → レイヤー → リクエストの流れ → データ）、下に検索できる機能逆引き。ファイルパスが主役 */
+:root {
+  --bg: #f4f7f6;
+  --surface: #ffffff;
+  --ink: #1d2a2f;
+  --ink-soft: #57666c;
+  --line: #d6e1de;
+  --teal: #1f8f7e;
+  --teal-wash: #e0f3ef;
+  --blue: #2f6db5;
+  --blue-wash: #e3edf9;
+  --amber: #a86a00;
+  --amber-wash: #fbf0d9;
+  --violet: #6a4fb3;
+  --violet-wash: #ece6f8;
+  --f-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f171a; --surface: #162126; --ink: #e2ebe9; --ink-soft: #9cafb2; --line: #2a3a3f;
+    --teal: #4fcdb7; --teal-wash: #15352f; --blue: #7fb0ec; --blue-wash: #182b42;
+    --amber: #f0b552; --amber-wash: #382a10; --violet: #b49cf0; --violet-wash: #2a2240; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f171a; --surface: #162126; --ink: #e2ebe9; --ink-soft: #9cafb2; --line: #2a3a3f;
+  --teal: #4fcdb7; --teal-wash: #15352f; --blue: #7fb0ec; --blue-wash: #182b42;
+  --amber: #f0b552; --amber-wash: #382a10; --violet: #b49cf0; --violet-wash: #2a2240; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.8; padding-inline: 16px; padding-block: 0 72px; }
+.wrap { max-width: 1120px; margin: 0 auto; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.4; margin: 0; }
+p { margin: 0; }
+a { color: var(--teal); }
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+code, .mono { font-family: var(--f-mono); }
+code { font-size: 0.86em; background: var(--teal-wash); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+
+header.top { padding-block: 44px 24px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
+.repo { font-family: var(--f-mono); font-size: 13px; color: var(--teal); }
+header.top h1 { font-size: clamp(28px, 4.6vw, 40px); font-weight: 900; }
+.lead { color: var(--ink-soft); max-width: 48em; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 4px 0 0; }
+.toc a { display: inline-block; text-decoration: none; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; }
+.toc a:hover { border-color: var(--teal); }
+.toc .n { font-family: var(--f-mono); color: var(--teal); margin-right: 6px; font-size: 12px; }
+
+section.chap { padding-block: 40px 4px; display: grid; gap: 16px; scroll-margin-top: 8px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; color: var(--teal); letter-spacing: 0.08em; }
+.chap h2 { font-size: clamp(20px, 3vw, 26px); font-weight: 900; margin-top: -8px; }
+.chap > p { max-width: 50em; color: var(--ink-soft); }
+
+.diagram { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.diagram svg { display: block; width: 100%; height: auto; }
+.diagram text { font-family: var(--f-body); fill: var(--ink); }
+.diagram .m { font-family: var(--f-mono); }
+.diagram .s { fill: var(--ink-soft); }
+figcaption { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+figure { margin: 0; }
+
+.tw { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--ink-soft); background: var(--bg); font-weight: 700; }
+tr:last-child td { border-bottom: none; }
+td.p { font-family: var(--f-mono); font-size: 12px; color: var(--teal); overflow-wrap: anywhere; }
+
+/* 逆引き */
+.finder { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--bg); padding-block: 10px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
+.search { display: flex; gap: 10px; align-items: center; }
+.search input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.search .count { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { font: inherit; font-size: 12.5px; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft); cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: var(--surface); }
+.group-h { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 18px; display: flex; gap: 10px; align-items: center; }
+.group-h::after { content: ""; flex: 1; border-top: 1px dashed var(--line); }
+.feats { display: grid; gap: 10px; }
+.feat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: grid; gap: 8px; min-width: 0; }
+.feat-h { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.feat-h h3 { font-size: 16px; font-weight: 700; }
+.app { font-family: var(--f-mono); font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 4px; }
+.app.webapp { background: var(--teal-wash); color: var(--teal); }
+.app.admin { background: var(--blue-wash); color: var(--blue); }
+.url { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-soft); }
+.feat .desc { font-size: 13.5px; color: var(--ink-soft); }
+dl.layers { margin: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 4px 12px; font-size: 12.5px; }
+dl.layers dt { font-family: var(--f-mono); font-size: 11px; padding-top: 3px; font-weight: 600; }
+dl.layers dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 6px; min-width: 0; }
+dt.l-page { color: var(--ink-soft); }
+dt.l-ui { color: var(--violet); }
+dt.l-pres { color: var(--blue); }
+dt.l-app { color: var(--teal); }
+dt.l-dom { color: var(--amber); }
+dt.l-inf { color: var(--ink-soft); }
+.path { font-family: var(--f-mono); font-size: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; color: var(--ink); cursor: copy; overflow-wrap: anywhere; text-align: left; font-weight: 400; }
+.path:hover { border-color: var(--teal); }
+.path.copied { border-color: var(--teal); background: var(--teal-wash); }
+@media (max-width: 560px) { dl.layers { grid-template-columns: 1fr; } dl.layers dd { margin-bottom: 4px; } }
+.empty { padding: 24px; text-align: center; color: var(--ink-soft); background: var(--surface); border: 1px dashed var(--line); border-radius: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-soft); }
+.legend span { font-family: var(--f-mono); font-weight: 600; }
+
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-soft); }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="repo">github.com/team-mirai/marumie ・ main @ 830f7b57（2026-10-06）</div>
+  <h1>marumie コード逆引き</h1>
+  <p class="lead">構成図でシステムの全体像をつかんでから、「この機能のコードはどこ？」を画面単位で引けるようにしたリファレンスです。逆引きのファイルパスはクリックでコピーできます。</p>
+  <ul class="toc">
+    <li><a href="#system"><span class="n">1</span>システム構成</a></li>
+    <li><a href="#contexts"><span class="n">2</span>コンテキストマップ</a></li>
+    <li><a href="#layers"><span class="n">3</span>レイヤー構成</a></li>
+    <li><a href="#requests"><span class="n">4</span>リクエストの流れ</a></li>
+    <li><a href="#data"><span class="n">5</span>データモデル</a></li>
+    <li><a href="#lookup"><span class="n">6</span>機能の逆引き</a></li>
+    <li><a href="#crosscut"><span class="n">7</span>横断的な仕組みの場所</a></li>
+  </ul>
+</header>
+
+<!-- 1 -->
+<section class="chap" id="system">
+  <div class="eyebrow">01</div>
+  <h2>システム構成</h2>
+  <p>Next.js のアプリが2つ（公開用 webapp と管理用 admin）、データは Supabase に集約されています。admin で書きこんだデータを webapp が読み、admin は更新のたびに webapp のキャッシュを無効化します。</p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 980 470" role="img" aria-labelledby="sys-t" style="min-width:760px">
+        <title id="sys-t">閲覧者とスタッフ、Vercel 上の webapp と admin、Supabase、Anthropic API の関係</title>
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-soft)"/></marker>
+          <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--teal)"/></marker>
+        </defs>
+        <!-- users -->
+        <rect x="16" y="70" width="140" height="64" rx="10" style="fill:var(--bg);stroke:var(--line);stroke-width:1.5"/>
+        <text x="86" y="98" text-anchor="middle" style="font-size:14px;font-weight:700">閲覧者</text>
+        <text x="86" y="118" text-anchor="middle" class="s" style="font-size:11px">ブラウザ</text>
+        <rect x="16" y="300" width="140" height="64" rx="10" style="fill:var(--bg);stroke:var(--line);stroke-width:1.5"/>
+        <text x="86" y="328" text-anchor="middle" style="font-size:14px;font-weight:700">事務所スタッフ</text>
+        <text x="86" y="348" text-anchor="middle" class="s" style="font-size:11px">CSV・領収書</text>
+
+        <!-- vercel -->
+        <rect x="196" y="20" width="420" height="430" rx="14" style="fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5"/>
+        <text x="212" y="42" class="m s" style="font-size:11px">Vercel（本番デプロイは Deploy Production ワークフローの手動実行）</text>
+
+        <!-- webapp -->
+        <rect x="226" y="58" width="360" height="150" rx="12" style="fill:var(--teal-wash);stroke:var(--teal);stroke-width:2"/>
+        <text x="246" y="84" style="font-size:15px;font-weight:900">webapp</text>
+        <text x="320" y="84" class="m s" style="font-size:11px">:3000 公開サイト</text>
+        <text x="246" y="110" class="m" style="font-size:12px">/o/[slug]/[year]  政治団体</text>
+        <text x="246" y="130" class="m" style="font-size:12px">/p/[slug]/[year]  議員の調研費</text>
+        <text x="246" y="150" class="m" style="font-size:12px">/api/refresh  キャッシュ無効化</text>
+        <text x="246" y="170" class="m" style="font-size:12px">/api/research-fund/receipts/…</text>
+        <text x="246" y="194" class="s" style="font-size:11px">unstable_cache（本番 3600 秒）でDB読み取りをキャッシュ</text>
+
+        <!-- admin -->
+        <rect x="226" y="262" width="360" height="170" rx="12" style="fill:var(--blue-wash);stroke:var(--blue);stroke-width:2"/>
+        <text x="246" y="288" style="font-size:15px;font-weight:900">admin</text>
+        <text x="306" y="288" class="m s" style="font-size:11px">:3001 管理画面</text>
+        <text x="246" y="312" class="m" style="font-size:12px">proxy.ts  メンテ・Basic認証・セッション</text>
+        <text x="246" y="332" class="m" style="font-size:12px">(public)  ログイン・パスワード系</text>
+        <text x="246" y="352" class="m" style="font-size:12px">(auth)    取りこみ・報告書・調研費</text>
+        <text x="246" y="372" class="m" style="font-size:12px">/api/*    XML・CSV・領収書の配信</text>
+        <text x="246" y="398" class="s" style="font-size:11px">Server Actions で更新 → revalidate ＋</text>
+        <text x="246" y="416" class="s" style="font-size:11px">WebappCacheInvalidator が webapp を無効化</text>
+
+        <!-- supabase -->
+        <rect x="660" y="120" width="300" height="250" rx="14" style="fill:var(--surface);stroke:var(--teal);stroke-width:2"/>
+        <text x="680" y="148" style="font-size:15px;font-weight:900">Supabase</text>
+        <rect x="680" y="164" width="260" height="56" rx="8" style="fill:var(--teal-wash);stroke:none"/>
+        <text x="696" y="188" style="font-size:13px;font-weight:700">PostgreSQL</text>
+        <text x="696" y="208" class="s m" style="font-size:11px">Prisma 経由。prisma/schema.prisma</text>
+        <rect x="680" y="230" width="260" height="56" rx="8" style="fill:var(--teal-wash);stroke:none"/>
+        <text x="696" y="254" style="font-size:13px;font-weight:700">Auth</text>
+        <text x="696" y="274" class="s m" style="font-size:11px">@supabase/ssr。メール＋Google</text>
+        <rect x="680" y="296" width="260" height="56" rx="8" style="fill:var(--teal-wash);stroke:none"/>
+        <text x="696" y="320" style="font-size:13px;font-weight:700">Storage</text>
+        <text x="696" y="340" class="s m" style="font-size:11px">領収書画像・同期用JSON</text>
+
+        <!-- anthropic -->
+        <rect x="660" y="396" width="300" height="56" rx="10" style="fill:var(--amber-wash);stroke:var(--amber);stroke-width:1.5"/>
+        <text x="680" y="420" style="font-size:13px;font-weight:700">Anthropic API（Claude）</text>
+        <text x="680" y="440" class="s m" style="font-size:11px">Vercel AI SDK。領収書読み取り・住所検索</text>
+
+        <!-- arrows -->
+        <path d="M156 102 H222" style="stroke:var(--ink-soft);stroke-width:1.6;fill:none" marker-end="url(#a1)"/>
+        <path d="M156 332 H222" style="stroke:var(--ink-soft);stroke-width:1.6;fill:none" marker-end="url(#a1)"/>
+        <path d="M588 140 C620 140 630 190 656 196" style="stroke:var(--teal);stroke-width:2;fill:none" marker-end="url(#a2)"/>
+        <text x="598" y="128" class="s" style="font-size:11px">読む</text>
+        <path d="M588 320 C620 320 630 250 656 248" style="stroke:var(--blue);stroke-width:2;fill:none" marker-end="url(#a2)"/>
+        <text x="596" y="346" class="s" style="font-size:11px">読み書き</text>
+        <path d="M588 410 C620 420 630 424 656 424" style="stroke:var(--amber);stroke-width:1.6;fill:none;stroke-dasharray:4 3" marker-end="url(#a1)"/>
+        <path d="M420 260 V212" style="stroke:var(--blue);stroke-width:1.6;fill:none;stroke-dasharray:4 3" marker-end="url(#a1)"/>
+        <text x="412" y="244" text-anchor="end" class="s m" style="font-size:11px">POST /api/refresh（x-refresh-token）</text>
+      </svg>
+    </div>
+    <figcaption>admin の proxy.ts は、メンテナンスモード（MAINTENANCE_MODE）→ Basic 認証（BASIC_AUTH_SECRET がある場合だけ）→ Supabase セッションの順に判定します。</figcaption>
+  </figure>
+</section>
+
+<!-- 2 -->
+<section class="chap" id="contexts">
+  <div class="eyebrow">02</div>
+  <h2>コンテキストマップ</h2>
+  <p><code>src/server/contexts/</code> の下は業務ごとの Bounded Context に分かれています。コンテキスト同士は直接 import せず、共通のものは shared に置きます。webapp と admin の間でコードは共有せず、データベースを介してつながります。</p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 980 360" role="img" aria-labelledby="ctx-t" style="min-width:760px">
+        <title id="ctx-t">webapp と admin のコンテキストと shared への依存</title>
+        <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-soft)"/></marker></defs>
+        <!-- webapp -->
+        <rect x="16" y="16" width="330" height="328" rx="14" style="fill:var(--teal-wash);stroke:var(--teal);stroke-width:1.5"/>
+        <text x="36" y="44" style="font-size:15px;font-weight:900">webapp</text>
+        <rect x="36" y="62" width="290" height="70" rx="10" style="fill:var(--surface);stroke:var(--teal);stroke-width:1.5"/>
+        <text x="52" y="88" class="m" style="font-size:13px;font-weight:600">public-finance</text>
+        <text x="52" y="112" class="s" style="font-size:11.5px">政治団体の集計・サンキー図・取引一覧</text>
+        <rect x="36" y="146" width="290" height="70" rx="10" style="fill:var(--surface);stroke:var(--teal);stroke-width:1.5"/>
+        <text x="52" y="172" class="m" style="font-size:13px;font-weight:600">research-fund</text>
+        <text x="52" y="196" class="s" style="font-size:11.5px">公開済み調研費の表示・領収書の署名URL</text>
+        <rect x="36" y="256" width="290" height="70" rx="10" style="fill:var(--bg);stroke:var(--line);stroke-width:1.5;stroke-dasharray:5 4"/>
+        <text x="52" y="282" class="m" style="font-size:13px;font-weight:600">shared</text>
+        <text x="52" y="306" class="s" style="font-size:11.5px">Prisma クライアント・共通モデル</text>
+        <path d="M120 134 V146" style="stroke:none"/>
+        <path d="M181 218 V252" style="stroke:var(--ink-soft);stroke-width:1.4;fill:none" marker-end="url(#a3)"/>
+        <path d="M328 98 C346 120 346 230 306 252" style="stroke:var(--ink-soft);stroke-width:1.4;fill:none" marker-end="url(#a3)"/>
+
+        <!-- admin -->
+        <rect x="390" y="16" width="574" height="328" rx="14" style="fill:var(--blue-wash);stroke:var(--blue);stroke-width:1.5"/>
+        <text x="410" y="44" style="font-size:15px;font-weight:900">admin</text>
+        <rect x="410" y="62" width="128" height="104" rx="10" style="fill:var(--surface);stroke:var(--blue);stroke-width:1.5"/>
+        <text x="424" y="88" class="m" style="font-size:13px;font-weight:600">auth</text>
+        <text x="424" y="112" class="s" style="font-size:11px">ログイン</text>
+        <text x="424" y="130" class="s" style="font-size:11px">ユーザー管理</text>
+        <text x="424" y="148" class="s" style="font-size:11px">認可ガード</text>
+        <rect x="548" y="62" width="128" height="104" rx="10" style="fill:var(--surface);stroke:var(--blue);stroke-width:1.5"/>
+        <text x="562" y="88" class="m" style="font-size:13px;font-weight:600">data-import</text>
+        <text x="562" y="112" class="s" style="font-size:11px">MF CSV 取りこみ</text>
+        <text x="562" y="130" class="s" style="font-size:11px">環境間の同期</text>
+        <text x="562" y="148" class="s" style="font-size:11px">取引の削除</text>
+        <rect x="686" y="62" width="128" height="104" rx="10" style="fill:var(--surface);stroke:var(--blue);stroke-width:1.5"/>
+        <text x="700" y="88" class="m" style="font-size:13px;font-weight:600">report</text>
+        <text x="700" y="112" class="s" style="font-size:11px">報告書 XML</text>
+        <text x="700" y="130" class="s" style="font-size:11px">取引先・寄附者</text>
+        <text x="700" y="148" class="s" style="font-size:11px">AI 住所検索</text>
+        <rect x="824" y="62" width="122" height="104" rx="10" style="fill:var(--surface);stroke:var(--blue);stroke-width:1.5"/>
+        <text x="836" y="88" class="m" style="font-size:13px;font-weight:600">research-fund</text>
+        <text x="836" y="112" class="s" style="font-size:11px">領収書 AI 読取</text>
+        <text x="836" y="130" class="s" style="font-size:11px">仕訳・公開</text>
+        <text x="836" y="148" class="s" style="font-size:11px">提出用 CSV</text>
+        <rect x="410" y="232" width="536" height="94" rx="10" style="fill:var(--bg);stroke:var(--line);stroke-width:1.5;stroke-dasharray:5 4"/>
+        <text x="428" y="258" class="m" style="font-size:13px;font-weight:600">shared</text>
+        <text x="428" y="282" class="s" style="font-size:11.5px">Transaction・PoliticalOrganization・Politician・BalanceSnapshot・管理対象の選択</text>
+        <text x="428" y="304" class="s" style="font-size:11.5px">webapp キャッシュ無効化（WebappCacheInvalidator）・同期用 JSON の書き出し</text>
+        <path d="M474 168 V228" style="stroke:var(--ink-soft);stroke-width:1.4;fill:none" marker-end="url(#a3)"/>
+        <path d="M612 168 V228" style="stroke:var(--ink-soft);stroke-width:1.4;fill:none" marker-end="url(#a3)"/>
+        <path d="M750 168 V228" style="stroke:var(--ink-soft);stroke-width:1.4;fill:none" marker-end="url(#a3)"/>
+        <path d="M885 168 V228" style="stroke:var(--ink-soft);stroke-width:1.4;fill:none" marker-end="url(#a3)"/>
+        <text x="946" y="44" text-anchor="end" class="s" style="font-size:11px">コンテキスト同士の import は禁止（dependency-cruiser で検査）</text>
+      </svg>
+    </div>
+  </figure>
+</section>
+
+<!-- 3 -->
+<section class="chap" id="layers">
+  <div class="eyebrow">03</div>
+  <h2>レイヤー構成</h2>
+  <p>各コンテキストの中は4層です。矢印の向きにしか import できません。presentation が実装クラスを new して usecase に渡す、シンプルな DI です。</p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 980 330" role="img" aria-labelledby="ly-t" style="min-width:760px">
+        <title id="ly-t">client、app、presentation、application、domain、infrastructure の依存方向</title>
+        <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--teal)"/></marker></defs>
+        <rect x="16" y="20" width="200" height="74" rx="10" style="fill:var(--bg);stroke:var(--line);stroke-width:1.5"/>
+        <text x="32" y="46" class="m" style="font-size:13px;font-weight:600">src/app/</text>
+        <text x="32" y="68" class="s" style="font-size:11.5px">page.tsx / route.ts</text>
+        <text x="32" y="86" class="s" style="font-size:11.5px">サーバーコンポーネント</text>
+        <rect x="16" y="120" width="200" height="74" rx="10" style="fill:var(--violet-wash);stroke:var(--violet);stroke-width:1.5"/>
+        <text x="32" y="146" class="m" style="font-size:13px;font-weight:600">src/client/</text>
+        <text x="32" y="168" class="s" style="font-size:11.5px">components/ lib/</text>
+        <text x="32" y="186" class="s" style="font-size:11.5px">"use client" は必要時のみ</text>
+
+        <rect x="290" y="20" width="250" height="74" rx="10" style="fill:var(--blue-wash);stroke:var(--blue);stroke-width:2"/>
+        <text x="306" y="46" class="m" style="font-size:13px;font-weight:600">presentation/</text>
+        <text x="306" y="68" class="s" style="font-size:11.5px">loaders/  unstable_cache で取得</text>
+        <text x="306" y="86" class="s" style="font-size:11.5px">actions/  "use server" ＋ revalidate</text>
+
+        <rect x="290" y="128" width="250" height="74" rx="10" style="fill:var(--teal-wash);stroke:var(--teal);stroke-width:2"/>
+        <text x="306" y="154" class="m" style="font-size:13px;font-weight:600">application/</text>
+        <text x="306" y="176" class="s" style="font-size:11.5px">usecases/  1クラス1操作・execute のみ</text>
+        <text x="306" y="194" class="s" style="font-size:11.5px">services/  組み立て・スコアリング</text>
+
+        <rect x="290" y="236" width="250" height="78" rx="10" style="fill:var(--amber-wash);stroke:var(--amber);stroke-width:2"/>
+        <text x="306" y="262" class="m" style="font-size:13px;font-weight:600">domain/</text>
+        <text x="306" y="284" class="s" style="font-size:11.5px">models/ services/ types/</text>
+        <text x="306" y="302" class="s" style="font-size:11.5px">repositories/  ← インターフェースだけ</text>
+
+        <rect x="640" y="128" width="320" height="74" rx="10" style="fill:var(--surface);stroke:var(--ink-soft);stroke-width:2"/>
+        <text x="656" y="154" class="m" style="font-size:13px;font-weight:600">infrastructure/</text>
+        <text x="656" y="176" class="s" style="font-size:11.5px">repositories/prisma-*.repository.ts</text>
+        <text x="656" y="194" class="s" style="font-size:11.5px">llm/  storage/  mf/  donor-csv/</text>
+
+        <path d="M218 56 H286" style="stroke:var(--teal);stroke-width:2;fill:none" marker-end="url(#a4)"/>
+        <path d="M218 150 C250 150 250 70 286 66" style="stroke:var(--teal);stroke-width:1.6;fill:none;stroke-dasharray:4 3" marker-end="url(#a4)"/>
+        <text x="226" y="118" class="s" style="font-size:10.5px">actions・型</text>
+        <path d="M218 180 C250 200 250 270 286 272" style="stroke:var(--teal);stroke-width:1.6;fill:none;stroke-dasharray:4 3" marker-end="url(#a4)"/>
+        <text x="222" y="236" class="s" style="font-size:10.5px">models の型・純粋関数</text>
+        <path d="M415 96 V124" style="stroke:var(--teal);stroke-width:2;fill:none" marker-end="url(#a4)"/>
+        <path d="M415 204 V232" style="stroke:var(--teal);stroke-width:2;fill:none" marker-end="url(#a4)"/>
+        <path d="M542 50 C600 50 640 80 690 124" style="stroke:var(--teal);stroke-width:2;fill:none" marker-end="url(#a4)"/>
+        <text x="590" y="44" class="s" style="font-size:11px">実装を new して usecase に渡す</text>
+        <path d="M800 204 C800 270 640 276 544 276" style="stroke:var(--teal);stroke-width:2;fill:none;stroke-dasharray:6 4" marker-end="url(#a4)"/>
+        <text x="650" y="296" class="s" style="font-size:11px">repositories のインターフェースを実装</text>
+      </svg>
+    </div>
+    <figcaption>禁止：domain → 他の層、infrastructure → application / presentation、client → application / infrastructure、presentation → client。<code>.dependency-cruiser.cjs</code> と <code>scripts/check-usecase-shape.mjs</code> が CI で検査します。</figcaption>
+  </figure>
+</section>
+
+<!-- 4 -->
+<section class="chap" id="requests">
+  <div class="eyebrow">04</div>
+  <h2>リクエストの流れ</h2>
+  <p>読み取り（webapp の表示）と書きこみ（admin の更新）で通る経路が決まっています。新しい機能もこの型にはめて書きます。</p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 980 300" role="img" aria-labelledby="rq-t" style="min-width:820px">
+        <title id="rq-t">読み取りと書きこみのリクエストが通るファイルの順番</title>
+        <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-soft)"/></marker></defs>
+        <text x="16" y="30" style="font-size:13px;font-weight:700;fill:var(--teal)">読み取り（webapp・サンキー図の例）</text>
+        <g style="font-size:11.5px">
+          <rect x="16" y="44" width="170" height="66" rx="8" style="fill:var(--bg);stroke:var(--line)"/>
+          <text x="28" y="68" style="font-weight:700">page.tsx</text><text x="28" y="90" class="m s" style="font-size:10.5px">app/o/[slug]/[year]</text>
+          <rect x="210" y="44" width="170" height="66" rx="8" style="fill:var(--blue-wash);stroke:var(--blue)"/>
+          <text x="222" y="68" style="font-weight:700">loader</text><text x="222" y="90" class="m s" style="font-size:10.5px">load-top-page-data</text>
+          <rect x="404" y="44" width="170" height="66" rx="8" style="fill:var(--teal-wash);stroke:var(--teal)"/>
+          <text x="416" y="68" style="font-weight:700">usecase</text><text x="416" y="90" class="m s" style="font-size:10.5px">get-sankey-aggregation</text>
+          <rect x="598" y="44" width="170" height="66" rx="8" style="fill:var(--amber-wash);stroke:var(--amber)"/>
+          <text x="610" y="68" style="font-weight:700">domain service</text><text x="610" y="90" class="m s" style="font-size:10.5px">sankey-data-builder</text>
+          <rect x="792" y="44" width="172" height="66" rx="8" style="fill:var(--surface);stroke:var(--ink-soft)"/>
+          <text x="804" y="68" style="font-weight:700">repository</text><text x="804" y="90" class="m s" style="font-size:10.5px">prisma-transaction</text>
+        </g>
+        <path d="M188 77 H206" style="stroke:var(--ink-soft);stroke-width:1.6" marker-end="url(#a5)"/>
+        <path d="M382 77 H400" style="stroke:var(--ink-soft);stroke-width:1.6" marker-end="url(#a5)"/>
+        <path d="M576 77 H594" style="stroke:var(--ink-soft);stroke-width:1.6" marker-end="url(#a5)"/>
+        <path d="M770 77 H788" style="stroke:var(--ink-soft);stroke-width:1.6" marker-end="url(#a5)"/>
+        <text x="210" y="130" class="s" style="font-size:11px">unstable_cache（tag: top-page-data）。ここでリポジトリと usecase を組み立てる</text>
+
+        <text x="16" y="176" style="font-size:13px;font-weight:700;fill:var(--blue)">書きこみ（admin・CSV取りこみの例）</text>
+        <g style="font-size:11.5px">
+          <rect x="16" y="190" width="150" height="66" rx="8" style="fill:var(--violet-wash);stroke:var(--violet)"/>
+          <text x="28" y="214" style="font-weight:700">client</text><text x="28" y="236" class="m s" style="font-size:10.5px">CsvUploadClient</text>
+          <rect x="186" y="190" width="160" height="66" rx="8" style="fill:var(--blue-wash);stroke:var(--blue)"/>
+          <text x="198" y="214" style="font-weight:700">action</text><text x="198" y="236" class="m s" style="font-size:10.5px">upload-csv</text>
+          <rect x="366" y="190" width="150" height="66" rx="8" style="fill:var(--bg);stroke:var(--line)"/>
+          <text x="378" y="214" style="font-weight:700">認可</text><text x="378" y="236" class="m s" style="font-size:10.5px">requireAuth()</text>
+          <rect x="536" y="190" width="200" height="66" rx="8" style="fill:var(--teal-wash);stroke:var(--teal)"/>
+          <text x="548" y="214" style="font-weight:700">usecase</text><text x="548" y="236" class="m s" style="font-size:10.5px">save-preview-transactions</text>
+          <rect x="756" y="190" width="208" height="66" rx="8" style="fill:var(--surface);stroke:var(--ink-soft)"/>
+          <text x="768" y="214" style="font-weight:700">保存 ＋ 無効化</text><text x="768" y="236" class="m s" style="font-size:10.5px">repository / CacheInvalidator</text>
+        </g>
+        <path d="M168 223 H182" style="stroke:var(--ink-soft);stroke-width:1.6" marker-end="url(#a5)"/>
+        <path d="M348 223 H362" style="stroke:var(--ink-soft);stroke-width:1.6" marker-end="url(#a5)"/>
+        <path d="M518 223 H532" style="stroke:var(--ink-soft);stroke-width:1.6" marker-end="url(#a5)"/>
+        <path d="M738 223 H752" style="stroke:var(--ink-soft);stroke-width:1.6" marker-end="url(#a5)"/>
+        <text x="186" y="278" class="s" style="font-size:11px">エラーは presentation で { ok: false, message } に変換。admin 側は updateTag / revalidatePath、webapp 側は /api/refresh で revalidateTag</text>
+      </svg>
+    </div>
+  </figure>
+</section>
+
+<!-- 5 -->
+<section class="chap" id="data">
+  <div class="eyebrow">05</div>
+  <h2>データモデル</h2>
+  <p>スキーマは <code>prisma/schema.prisma</code> の1ファイルです。政治資金側と調研費側で、ほぼ独立した2つのまとまりになっています。</p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 980 380" role="img" aria-labelledby="er-t" style="min-width:820px">
+        <title id="er-t">政治資金と調研費の主要テーブルの関係</title>
+        <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-soft)"/></marker></defs>
+        <g transform="translate(20,0)">
+        <g class="m" style="font-size:11.5px">
+          <!-- left: political finance -->
+          <text x="16" y="24" style="font-family:var(--f-body);font-size:13px;font-weight:700;fill:var(--teal)">政治資金</text>
+          <rect x="16" y="40" width="200" height="40" rx="6" style="fill:var(--teal-wash);stroke:var(--teal)"/><text x="28" y="65">Tenant</text>
+          <rect x="16" y="110" width="200" height="40" rx="6" style="fill:var(--teal-wash);stroke:var(--teal)"/><text x="28" y="135">PoliticalOrganization</text>
+          <rect x="16" y="180" width="200" height="40" rx="6" style="fill:var(--surface);stroke:var(--teal)"/><text x="28" y="205">Transaction</text>
+          <rect x="16" y="250" width="200" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="28" y="275">BalanceSnapshot</text>
+          <rect x="16" y="320" width="200" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="28" y="345">OrganizationReportProfile</text>
+          <rect x="250" y="160" width="190" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="262" y="185">TransactionCounterpart</text>
+          <rect x="300" y="216" width="140" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="312" y="241">TransactionDonor</text>
+          <rect x="250" y="276" width="90" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="260" y="301">Counterpart</text>
+          <rect x="350" y="276" width="90" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="364" y="301">Donor</text>
+          <rect x="250" y="40" width="190" height="40" rx="6" style="fill:var(--bg);stroke:var(--line)"/><text x="262" y="65">User / UserTenantMembership</text>
+        </g>
+        <path d="M116 82 V106" style="stroke:var(--ink-soft);stroke-width:1.4" marker-end="url(#a6)"/>
+        <path d="M116 152 V176" style="stroke:var(--ink-soft);stroke-width:1.4" marker-end="url(#a6)"/>
+        <path d="M16 136 C-2 180 -2 250 14 270" style="stroke:var(--ink-soft);stroke-width:1.2;fill:none" marker-end="url(#a6)"/>
+        <path d="M16 144 C-12 200 -12 320 14 340" style="stroke:var(--ink-soft);stroke-width:1.2;fill:none" marker-end="url(#a6)"/>
+        <path d="M218 196 H246" style="stroke:var(--ink-soft);stroke-width:1.4" marker-end="url(#a6)"/>
+        <path d="M218 210 C240 236 260 236 296 236" style="stroke:var(--ink-soft);stroke-width:1.4;fill:none" marker-end="url(#a6)"/>
+        <path d="M275 202 V272" style="stroke:var(--ink-soft);stroke-width:1.2;fill:none;stroke-dasharray:3 3"/>
+        <path d="M395 258 V272" style="stroke:var(--ink-soft);stroke-width:1.2;fill:none;stroke-dasharray:3 3"/>
+        <path d="M248 60 H218" style="stroke:var(--ink-soft);stroke-width:1.2" marker-end="url(#a6)"/>
+        </g>
+
+        <line x1="476" y1="20" x2="476" y2="364" style="stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5"/>
+
+        <g class="m" style="font-size:11.5px">
+          <text x="500" y="24" style="font-family:var(--f-body);font-size:13px;font-weight:700;fill:var(--amber)">調研費（ResearchFund*）</text>
+          <rect x="500" y="40" width="200" height="40" rx="6" style="fill:var(--amber-wash);stroke:var(--amber)"/><text x="512" y="65">Politician</text>
+          <rect x="724" y="40" width="240" height="40" rx="6" style="fill:var(--bg);stroke:var(--line)"/><text x="736" y="65">PoliticianOrgMembership</text>
+          <rect x="500" y="110" width="200" height="40" rx="6" style="fill:var(--amber-wash);stroke:var(--amber)"/><text x="512" y="135">Book（年度の帳簿）</text>
+          <rect x="500" y="180" width="200" height="40" rx="6" style="fill:var(--surface);stroke:var(--amber)"/><text x="512" y="205">JournalEntry（仕訳）</text>
+          <rect x="500" y="250" width="200" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="512" y="275">JournalLine（借方・貸方）</text>
+          <rect x="724" y="110" width="116" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="734" y="135">ScanBatch</text>
+          <rect x="848" y="110" width="116" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="858" y="135">ScanJob</text>
+          <rect x="724" y="180" width="116" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="734" y="205">Document</text>
+          <rect x="848" y="180" width="116" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="858" y="205">Payee</text>
+          <rect x="724" y="250" width="116" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="734" y="275">Account</text>
+          <rect x="848" y="250" width="116" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="858" y="275">Prompt</text>
+          <rect x="500" y="320" width="464" height="40" rx="6" style="fill:var(--surface);stroke:var(--line)"/><text x="512" y="345">ExpenditureGroup / GroupItem / GroupOutcome（使途の説明グループ）</text>
+        </g>
+        <path d="M600 82 V106" style="stroke:var(--ink-soft);stroke-width:1.4" marker-end="url(#a6)"/>
+        <path d="M600 152 V176" style="stroke:var(--ink-soft);stroke-width:1.4" marker-end="url(#a6)"/>
+        <path d="M600 222 V246" style="stroke:var(--ink-soft);stroke-width:1.4" marker-end="url(#a6)"/>
+        <path d="M702 60 H720" style="stroke:var(--ink-soft);stroke-width:1.2" marker-end="url(#a6)"/>
+        <path d="M702 130 H720" style="stroke:var(--ink-soft);stroke-width:1.2" marker-end="url(#a6)"/>
+        <path d="M842 130 H844" style="stroke:var(--ink-soft);stroke-width:1.2" marker-end="url(#a6)"/>
+        <path d="M722 200 H702" style="stroke:var(--ink-soft);stroke-width:1.2" marker-end="url(#a6)"/>
+        <path d="M846 200 C800 230 760 226 704 210" style="stroke:var(--ink-soft);stroke-width:1.2;fill:none" marker-end="url(#a6)"/>
+        <path d="M722 270 H702" style="stroke:var(--ink-soft);stroke-width:1.2" marker-end="url(#a6)"/>
+      </svg>
+    </div>
+    <figcaption>仕訳の状態は <code>draft → approved → published</code>（<code>ResearchFundEntryStatus</code>）、発生源は <code>scan / manual / grant</code>。webapp に出るのは <code>published</code> だけです。モデル名は <code>ResearchFund</code> の接頭辞を省いて書いています。</figcaption>
+  </figure>
+</section>
+
+<!-- 6 -->
+<section class="chap" id="lookup">
+  <div class="eyebrow">06</div>
+  <h2>機能の逆引き</h2>
+  <p>画面や API ごとに、関係するファイルをレイヤー順に並べています。機能名・URL・ファイル名のどれでも検索できます。</p>
+  <div class="finder">
+    <div class="search">
+      <input id="q" type="search" placeholder="例：サンキー、scan、/politicians、xml" aria-label="機能を検索" autocomplete="off">
+      <span class="count" id="count"></span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="アプリで絞りこむ">
+      <button type="button" data-app="all" aria-pressed="true">すべて</button>
+      <button type="button" data-app="webapp" aria-pressed="false">webapp</button>
+      <button type="button" data-app="admin" aria-pressed="false">admin</button>
+    </div>
+    <div class="legend">
+      <span style="color:var(--ink-soft)">page</span><span style="color:var(--violet)">ui</span><span style="color:var(--blue)">presentation</span><span style="color:var(--teal)">application</span><span style="color:var(--amber)">domain</span><span style="color:var(--ink-soft)">infrastructure</span>
+    </div>
+  </div>
+  <div id="results"></div>
+</section>
+
+<!-- 7 -->
+<section class="chap" id="crosscut">
+  <div class="eyebrow">07</div>
+  <h2>横断的な仕組みの場所</h2>
+  <div class="tw"><table>
+    <thead><tr><th>知りたいこと</th><th>場所</th><th>メモ</th></tr></thead>
+    <tbody>
+      <tr><td>admin の認証・メンテナンスモード</td><td class="p">admin/src/proxy.ts</td><td>public パス以外は認証必須。MAINTENANCE_MODE で 503</td></tr>
+      <tr><td>Server Action の認可</td><td class="p">admin/src/server/contexts/auth/presentation/loaders/require-auth.ts<br>…/require-admin.ts ・ …/require-auth-response.ts</td><td>actions の先頭で呼ぶ。API ルートは *-response 版</td></tr>
+      <tr><td>どの団体・議員を操作中か</td><td class="p">admin/src/server/contexts/shared/presentation/loaders/load-current-organization-target.ts<br>…/actions/select-admin-target.ts</td><td>画面上部の TargetSelector と連動</td></tr>
+      <tr><td>webapp のキャッシュ</td><td class="p">webapp/src/server/contexts/*/presentation/loaders/constants.ts<br>webapp/src/app/api/refresh/route.ts</td><td>本番は 3600 秒。タグ単位で revalidateTag</td></tr>
+      <tr><td>admin から webapp のキャッシュを消す</td><td class="p">admin/src/server/contexts/shared/infrastructure/services/webapp-cache-invalidator.ts</td><td>DATA_REFRESH_TOKEN で /api/refresh を呼ぶ</td></tr>
+      <tr><td>Prisma クライアント</td><td class="p">{webapp,admin}/src/server/contexts/shared/infrastructure/prisma.ts</td><td>webapp の public-finance にも同名ファイルあり</td></tr>
+      <tr><td>DB スキーマとシード</td><td class="p">prisma/schema.prisma<br>prisma/seed.ts</td><td>マイグレーションは prisma/migrations/</td></tr>
+      <tr><td>LLM 呼び出し</td><td class="p">admin/src/server/contexts/research-fund/infrastructure/llm/<br>admin/src/server/contexts/report/infrastructure/llm/</td><td>モデルは環境変数で上書き可（RESEARCH_FUND_EXTRACTION_MODEL）</td></tr>
+      <tr><td>エラー型・エラーコード</td><td class="p">admin/src/server/contexts/report/domain/types/validation.ts<br>admin/src/server/contexts/research-fund/domain/types/validation.ts</td><td>{ status: "valid" | "invalid", errors } の形</td></tr>
+      <tr><td>報告書 XML の仕様</td><td class="p">docs/reference/report-format.md<br>docs/reference/tebiki/</td><td>総務省の様式（SYUUSHI07_01〜20）</td></tr>
+      <tr><td>依存ルール・usecase の形の検査</td><td class="p">.dependency-cruiser.cjs<br>scripts/check-usecase-shape.mjs</td><td>KNOWN_VIOLATIONS に新規追加は禁止</td></tr>
+      <tr><td>admin の UI 部品</td><td class="p">admin/src/client/components/ui/<br>docs/admin-ui-guidelines.md</td><td>Radix ベース。admin はライトモードのみ</td></tr>
+      <tr><td>SEO</td><td class="p">webapp/src/app/sitemap.ts ・ robots.ts</td><td>調研費を非公開にした議員は sitemap に出ない</td></tr>
+      <tr><td>テスト</td><td class="p">{webapp,admin}/tests/ ・ {webapp,admin}/e2e/tests/</td><td>tests/ は src/ と同じ階層。E2E は Playwright</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>team-mirai/marumie の main（830f7b57、2026-10-06）のコードから、page.tsx → loaders / actions → usecases の import を辿ってまとめました。パスは変わることがあるので、見つからないときはファイル名で検索してください。</footer>
+</div>
+
+<script>
+const W = "webapp/src/", A = "admin/src/";
+const wc = (ctx) => W + "server/contexts/" + ctx + "/";
+const ac = (ctx) => A + "server/contexts/" + ctx + "/";
+const PF = wc("public-finance"), WRF = wc("research-fund");
+const AU = ac("auth"), DI = ac("data-import"), RP = ac("report"), RF = ac("research-fund"), SH = ac("shared");
+const uc = (base, names) => names.map((n) => base + "application/usecases/" + n + "-usecase.ts");
+const BOOK = A + "app/(auth)/politicians/[id]/books/[bookId]/";
+
+const FEATURES = [
+  // ---------------- webapp ----------------
+  { group: "公開サイト（政治資金）", app: "webapp", name: "政治団体のトップページ", url: "/o/[slug]/[year]",
+    desc: "収支サマリー、サンキー図、月別推移、貸借対照表、取引の抜粋。政党なら調研費のサマリーも出す",
+    page: [W + "app/o/[slug]/[year]/page.tsx"],
+    ui: [W + "client/components/top-page/", W + "client/components/top-page/features/charts/SankeyChart.tsx", W + "client/components/top-page/features/charts/MonthlyChart.tsx"],
+    pres: [PF + "presentation/loaders/load-top-page-data.ts", PF + "presentation/loaders/load-organizations.ts", WRF + "presentation/loaders/load-research-fund-party-summary.ts"],
+    app_: uc(PF, ["get-sankey-aggregation", "get-monthly-aggregation", "get-balance-sheet", "get-transactions-by-slug", "get-mock-transaction-page-data"]),
+    dom: [PF + "domain/services/sankey-data-builder.ts", PF + "domain/models/balance-sheet.ts", PF + "domain/models/monthly-aggregation.ts"],
+    inf: [PF + "infrastructure/repositories/prisma-transaction.repository.ts", PF + "infrastructure/repositories/prisma-balance-sheet.repository.ts", PF + "infrastructure/repositories/prisma-monthly-aggregation.repository.ts", PF + "infrastructure/repositories/prisma-balance-snapshot.repository.ts"] },
+  { group: "公開サイト（政治資金）", app: "webapp", name: "政治団体の取引一覧", url: "/o/[slug]/[year]/transactions",
+    desc: "全取引の一覧（並べ替え・カテゴリ絞りこみ・ページング）",
+    page: [W + "app/o/[slug]/[year]/transactions/page.tsx"],
+    ui: [W + "client/components/transactions/"],
+    pres: [PF + "presentation/loaders/load-transactions-page-data.ts"],
+    app_: uc(PF, ["get-transactions-by-slug"]),
+    dom: [PF + "domain/models/display-transaction.ts"],
+    inf: [PF + "infrastructure/repositories/prisma-transaction.repository.ts"] },
+  { group: "公開サイト（政治資金）", app: "webapp", name: "取引の CSV ダウンロード", url: "取引一覧のダウンロードボタン",
+    desc: "クライアントから \"use server\" の関数を呼んで CSV を返す",
+    ui: [W + "client/components/transactions/CsvDownloadLink.tsx"],
+    pres: [PF + "presentation/loaders/load-transactions-for-csv.ts"],
+    app_: uc(PF, ["get-transactions-for-csv", "get-all-transactions-by-slug"]) },
+  { group: "公開サイト（政治資金）", app: "webapp", name: "団体・年度の振り分け", url: "/o/[slug] ・ /o/[slug]/transactions",
+    desc: "slug を検証し、デフォルトの年度へリダイレクト",
+    page: [W + "app/o/[slug]/page.tsx", W + "app/o/[slug]/transactions/page.tsx"],
+    pres: [PF + "presentation/loaders/load-organizations.ts"],
+    app_: uc(PF, ["get-organizations"]),
+    inf: [PF + "infrastructure/repositories/prisma-political-organization.repository.ts"] },
+  { group: "公開サイト（調研費）", app: "webapp", name: "議員の調研費ページ", url: "/p/[slug]/[year]",
+    desc: "KPI、流れ図、月別推移、支出カテゴリ、ハイライト。公開済みの仕訳だけを使う",
+    page: [W + "app/p/[slug]/[year]/page.tsx"],
+    ui: [W + "client/components/research-fund/"],
+    pres: [WRF + "presentation/loaders/load-research-fund-page.ts"],
+    app_: uc(WRF, ["get-research-fund-page"]),
+    dom: [WRF + "domain/models/research-fund-page.ts", WRF + "domain/services/research-fund-coverage.ts", WRF + "domain/services/research-fund-category-color.ts", WRF + "domain/services/research-fund-category-description.ts"],
+    inf: [WRF + "infrastructure/repositories/prisma-research-fund.repository.ts"] },
+  { group: "公開サイト（調研費）", app: "webapp", name: "調研費の取引一覧と CSV", url: "/p/[slug]/[year]/transactions",
+    desc: "仕訳の一覧、領収書モーダル、CSV ダウンロード",
+    page: [W + "app/p/[slug]/[year]/transactions/page.tsx", W + "app/p/[slug]/page.tsx"],
+    ui: [W + "client/components/research-fund/ResearchFundTransactionsTable.tsx", W + "client/components/research-fund/ReceiptModal.tsx", W + "client/components/research-fund/ResearchFundCsvDownloadLink.tsx"],
+    pres: [WRF + "presentation/loaders/load-research-fund-page.ts", WRF + "presentation/loaders/download-research-fund-csv.ts"],
+    dom: [WRF + "domain/services/research-fund-csv.ts"] },
+  { group: "公開サイト（調研費）", app: "webapp", name: "領収書画像の配信", url: "GET /api/research-fund/receipts/[entryId]",
+    desc: "公開済みの仕訳に紐づく領収書だけ、Storage の署名 URL を返す",
+    page: [W + "app/api/research-fund/receipts/[entryId]/route.ts"],
+    pres: [WRF + "presentation/loaders/load-research-fund-receipt.ts"],
+    app_: uc(WRF, ["get-research-fund-receipt"]),
+    dom: [WRF + "domain/models/research-fund-receipt-publication.ts", WRF + "domain/repositories/receipt-storage.interface.ts"],
+    inf: [WRF + "infrastructure/storage/supabase-receipt-storage.ts"] },
+  { group: "公開サイト（調研費）", app: "webapp", name: "政党ページの調研費サマリー・議員一覧", url: "/o/[slug]/[year] の一部 ・ sitemap",
+    desc: "所属議員の調研費をまとめて表示。公開設定の議員だけを対象にする",
+    page: [W + "app/sitemap.ts"],
+    ui: [W + "client/components/research-fund/ResearchFundPartySection.tsx"],
+    pres: [WRF + "presentation/loaders/load-research-fund-party-summary.ts", WRF + "presentation/loaders/load-research-fund-politicians.ts", WRF + "presentation/loaders/load-published-research-fund-pages.ts"],
+    app_: uc(WRF, ["get-research-fund-party-summary", "get-research-fund-politicians", "get-published-research-fund-pages"]),
+    dom: [WRF + "domain/models/research-fund-party-summary.ts", WRF + "domain/models/research-fund-politician-list.ts"] },
+  { group: "公開サイト（共通）", app: "webapp", name: "キャッシュ無効化 API", url: "POST /api/refresh",
+    desc: "x-refresh-token を検証して revalidateTag。admin の更新から呼ばれる",
+    page: [W + "app/api/refresh/route.ts"],
+    pres: [PF + "presentation/loaders/constants.ts", WRF + "presentation/loaders/constants.ts"] },
+
+  // ---------------- admin: auth ----------------
+  { group: "管理画面：認証・ユーザー", app: "admin", name: "ログイン（メール・Google）", url: "/login ・ /api/auth/callback",
+    page: [A + "app/(public)/login/page.tsx", A + "app/api/auth/callback/route.ts"],
+    ui: [A + "client/components/auth/"],
+    pres: [AU + "presentation/actions/login.ts", AU + "presentation/actions/login-with-google.ts", AU + "presentation/actions/exchange-code-for-session.ts", AU + "presentation/loaders/load-login-providers.ts"],
+    app_: uc(AU, ["login", "login-with-google", "exchange-code-for-session", "logout"]) },
+  { group: "管理画面：認証・ユーザー", app: "admin", name: "招待・パスワード設定・リセット", url: "/auth/setup ・ /auth/reset-password ・ /forgot-password",
+    page: [A + "app/(public)/auth/setup/page.tsx", A + "app/(public)/auth/reset-password/page.tsx", A + "app/(public)/forgot-password/page.tsx"],
+    pres: [AU + "presentation/actions/setup-password.ts", AU + "presentation/actions/reset-password.ts", AU + "presentation/actions/request-password-reset.ts", AU + "presentation/actions/complete-invite-session.ts", AU + "presentation/actions/complete-recovery-session.ts"],
+    app_: uc(AU, ["setup-password", "reset-password", "request-password-reset", "complete-invite-session", "complete-recovery-session"]) },
+  { group: "管理画面：認証・ユーザー", app: "admin", name: "ユーザー管理", url: "/users",
+    desc: "招待とロール変更（admin ロールのみ）",
+    page: [A + "app/(auth)/users/page.tsx"],
+    ui: [A + "client/components/user-management/"],
+    pres: [AU + "presentation/actions/invite-user.ts", AU + "presentation/actions/update-user-role.ts", AU + "presentation/loaders/load-all-users.ts"],
+    app_: uc(AU, ["invite-user", "update-user-role", "get-all-users"]) },
+
+  // ---------------- admin: organizations ----------------
+  { group: "管理画面：政治団体・議員", app: "admin", name: "政治団体の管理", url: "/political-organizations ・ /new ・ /[orgId]",
+    page: [A + "app/(auth)/political-organizations/page.tsx", A + "app/(auth)/political-organizations/new/page.tsx", A + "app/(auth)/political-organizations/[orgId]/page.tsx"],
+    ui: [A + "client/components/political-organizations/"],
+    pres: [SH + "presentation/actions/create-political-organization.ts", SH + "presentation/actions/update-political-organization.ts", SH + "presentation/actions/delete-political-organization.ts", SH + "presentation/loaders/load-political-organizations-data.ts"],
+    app_: uc(SH, ["create-political-organization", "update-political-organization", "delete-political-organization", "get-political-organizations"]),
+    inf: [SH + "infrastructure/repositories/prisma-political-organization.repository.ts"] },
+  { group: "管理画面：政治団体・議員", app: "admin", name: "報告書プロフィール（表紙情報）", url: "/political-organizations/[orgId]/report-profile",
+    page: [A + "app/(auth)/political-organizations/[orgId]/report-profile/page.tsx"],
+    ui: [A + "client/components/report-profile/"],
+    pres: [RP + "presentation/actions/save-organization-profile.ts", RP + "presentation/loaders/organization-profile-loader.ts"],
+    app_: uc(RP, ["save-organization-profile", "get-organization-profile"]),
+    dom: [RP + "domain/models/organization-report-profile.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-organization-report-profile.repository.ts"] },
+  { group: "管理画面：政治団体・議員", app: "admin", name: "議員の管理と調研費の公開スイッチ", url: "/politicians ・ /new ・ /[id]/edit",
+    page: [A + "app/(auth)/politicians/page.tsx", A + "app/(auth)/politicians/new/page.tsx", A + "app/(auth)/politicians/[id]/edit/page.tsx"],
+    ui: [A + "client/components/politicians/"],
+    pres: [SH + "presentation/actions/manage-politician.ts", SH + "presentation/loaders/load-politicians.ts"],
+    app_: uc(SH, ["save-politician", "delete-politician", "set-politician-research-fund-public", "list-politicians", "get-politician"]),
+    inf: [SH + "infrastructure/repositories/prisma-politician.repository.ts"] },
+  { group: "管理画面：政治団体・議員", app: "admin", name: "残高スナップショット", url: "/balance-snapshots",
+    desc: "ある日時点の残高を登録（貸借対照表に使う）",
+    page: [A + "app/(auth)/balance-snapshots/page.tsx", A + "app/api/balance-snapshots/route.ts"],
+    ui: [A + "client/components/balance-snapshots/"],
+    pres: [SH + "presentation/actions/create-balance-snapshot.ts", SH + "presentation/actions/delete-balance-snapshot.ts", SH + "presentation/loaders/load-balance-snapshots-data.ts"],
+    app_: uc(SH, ["create-balance-snapshot", "delete-balance-snapshot"]),
+    inf: [SH + "infrastructure/repositories/prisma-balance-snapshot.repository.ts"] },
+
+  // ---------------- admin: data import ----------------
+  { group: "管理画面：取引データ", app: "admin", name: "MFクラウド CSV の取りこみ", url: "/upload-csv",
+    desc: "プレビュー → 有効な行だけ保存 → webapp のキャッシュ無効化",
+    page: [A + "app/(auth)/upload-csv/page.tsx"],
+    ui: [A + "client/components/csv-upload/"],
+    pres: [DI + "presentation/actions/preview-csv.ts", DI + "presentation/actions/upload-csv.ts"],
+    app_: uc(DI, ["preview-mf-csv", "save-preview-transactions"]),
+    dom: [DI + "domain/services/encoding-converter.ts", DI + "domain/services/transaction-validator.ts", DI + "domain/services/preview-stats-calculator.ts", DI + "domain/models/preview-transaction.ts"],
+    inf: [DI + "infrastructure/mf/mf-csv-loader.ts", DI + "infrastructure/mf/mf-record-converter.ts", SH + "infrastructure/repositories/prisma-transaction.repository.ts", SH + "infrastructure/services/webapp-cache-invalidator.ts"] },
+  { group: "管理画面：取引データ", app: "admin", name: "取引の一覧・削除", url: "/transactions ・ /bulk-delete-transactions",
+    page: [A + "app/(auth)/transactions/page.tsx", A + "app/(auth)/bulk-delete-transactions/page.tsx", A + "app/api/transactions/route.ts", A + "app/api/transactions/search-by-nos/route.ts"],
+    ui: [A + "client/components/transactions/"],
+    pres: [DI + "presentation/actions/delete-transaction.ts", DI + "presentation/actions/bulk-delete-transactions.ts", DI + "presentation/actions/delete-all-transactions.ts", DI + "presentation/loaders/load-transactions-by-nos.ts", SH + "presentation/actions/clear-webapp-cache.ts"],
+    app_: uc(DI, ["get-transactions", "delete-all-transactions"]).concat(uc(SH, ["clear-webapp-cache"])) },
+  { group: "管理画面：取引データ", app: "admin", name: "環境間の同期（JSON 書き出し・取りこみ）", url: "/sync-export ・ /sync-import",
+    desc: "団体1件分の政治資金データを JSON に書き出し、別環境で丸ごと置き換える",
+    page: [A + "app/(auth)/sync-export/page.tsx", A + "app/(auth)/sync-import/page.tsx", A + "app/api/export-organization-sync/route.ts"],
+    ui: [A + "client/components/sync-export/", A + "client/components/sync-import/"],
+    pres: [DI + "presentation/actions/prepare-sync-import-upload.ts", DI + "presentation/actions/preview-sync-import.ts", DI + "presentation/actions/run-sync-import.ts"],
+    app_: uc(SH, ["export-organization-sync"]).concat(uc(DI, ["prepare-sync-import-upload", "preview-organization-sync-import", "import-organization-sync"])),
+    inf: [SH + "infrastructure/repositories/prisma-organization-sync-export.repository.ts", DI + "infrastructure/storage/supabase-sync-import-file-storage.ts"] },
+
+  // ---------------- admin: report ----------------
+  { group: "管理画面：報告書", app: "admin", name: "報告書 XML のプレビューと出力", url: "/export-report ・ GET /api/export-report",
+    desc: "収入・支出・寄附を組み立てて、総務省の様式の XML にする",
+    page: [A + "app/(auth)/export-report/page.tsx", A + "app/api/export-report/route.ts"],
+    ui: [A + "client/components/export-report/"],
+    pres: [RP + "presentation/loaders/report-preview-loader.ts", RP + "presentation/actions/update-grant-expenditure-flag.ts"],
+    app_: uc(RP, ["xml-export", "update-grant-expenditure-flag"]).concat([RP + "application/services/income-assembler.ts", RP + "application/services/expense-assembler.ts", RP + "application/services/donation-assembler.ts"]),
+    dom: [RP + "domain/services/report-serializer.ts", RP + "domain/services/income-serializer.ts", RP + "domain/services/expense-serializer.ts", RP + "domain/services/donation-serializer.ts", RP + "domain/services/summary-serializer.ts", RP + "domain/models/grant-expenditure-rules.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-report-transaction.repository.ts"] },
+  { group: "管理画面：報告書", app: "admin", name: "取引先マスタと AI 住所検索", url: "/counterparts ・ /counterparts/[id]",
+    page: [A + "app/(auth)/counterparts/page.tsx", A + "app/(auth)/counterparts/[id]/page.tsx"],
+    ui: [A + "client/components/counterparts/"],
+    pres: [RP + "presentation/actions/create-counterpart.ts", RP + "presentation/actions/update-counterpart.ts", RP + "presentation/actions/delete-counterpart.ts", RP + "presentation/actions/search-counterpart-address.ts", RP + "presentation/loaders/counterparts-loader.ts", RP + "presentation/loaders/counterpart-detail-loader.ts"],
+    app_: uc(RP, ["create-counterpart", "update-counterpart", "delete-counterpart", "search-counterpart-address", "get-counterparts", "get-counterpart-detail", "get-counterpart-transactions"]),
+    dom: [RP + "domain/models/counterpart.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-counterpart.repository.ts", RP + "infrastructure/llm/vercel-ai-gateway.ts", RP + "infrastructure/llm/prompt-templates/"] },
+  { group: "管理画面：報告書", app: "admin", name: "取引と取引先の紐付け", url: "/assign/counterparts",
+    desc: "一括紐付け・解除と、よく使う取引先の提案",
+    page: [A + "app/(auth)/assign/counterparts/page.tsx"],
+    ui: [A + "client/components/counterpart-assignment/"],
+    pres: [RP + "presentation/actions/bulk-assign-counterpart.ts", RP + "presentation/actions/bulk-unassign-counterpart.ts", RP + "presentation/actions/suggest-counterpart.ts", RP + "presentation/loaders/transactions-with-counterparts-loader.ts"],
+    app_: uc(RP, ["bulk-assign-counterpart", "bulk-unassign-counterpart", "suggest-counterpart", "get-transactions-with-counterparts"]).concat([RP + "application/services/counterpart-suggester.ts"]),
+    dom: [RP + "domain/models/counterpart-assignment-rules.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-transaction-counterpart.repository.ts"] },
+  { group: "管理画面：報告書", app: "admin", name: "寄附者マスタ・紐付け・CSV 取りこみ", url: "/donors ・ /assign/donors ・ /import-donors",
+    page: [A + "app/(auth)/donors/page.tsx", A + "app/(auth)/assign/donors/page.tsx", A + "app/(auth)/import-donors/page.tsx"],
+    ui: [A + "client/components/donors/", A + "client/components/donor-assignment/", A + "client/components/donor-csv-import/"],
+    pres: [RP + "presentation/actions/create-donor.ts", RP + "presentation/actions/update-donor.ts", RP + "presentation/actions/delete-donor.ts", RP + "presentation/actions/bulk-assign-donor.ts", RP + "presentation/actions/preview-donor-csv.ts", RP + "presentation/actions/import-donor-csv.ts", RP + "presentation/loaders/donors-loader.ts", RP + "presentation/loaders/transactions-with-donors-loader.ts"],
+    app_: uc(RP, ["create-donor", "update-donor", "delete-donor", "assign-donor", "preview-donor-csv", "import-donor-csv", "get-donors", "get-transactions-with-donors"]),
+    dom: [RP + "domain/models/donor.ts", RP + "domain/models/donor-assignment-rules.ts", RP + "domain/services/donor-csv-validator.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-donor.repository.ts", RP + "infrastructure/repositories/prisma-transaction-donor.repository.ts", RP + "infrastructure/donor-csv/"] },
+
+  // ---------------- admin: research fund ----------------
+  { group: "管理画面：調研費", app: "admin", name: "帳簿（議員×年度）の作成", url: "/politicians/[id]/books",
+    page: [A + "app/(auth)/politicians/[id]/books/page.tsx"],
+    ui: [A + "client/components/books/"],
+    pres: [RF + "presentation/actions/manage-book.ts", RF + "presentation/loaders/load-books.ts"],
+    app_: uc(RF, ["create-book", "update-book", "list-books"]),
+    dom: [RF + "domain/models/book.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-book.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "交付（受け取り）の登録", url: "…/books/[bookId]/grants",
+    desc: "支給額を登録すると、受け取りの仕訳が自動で作られる",
+    page: [BOOK + "grants/page.tsx"],
+    pres: [RF + "presentation/actions/register-grant.ts", RF + "presentation/loaders/load-grants.ts"],
+    app_: uc(RF, ["register-grant", "list-grants"]),
+    dom: [RF + "domain/services/grant-journal-builder.ts", RF + "domain/models/grant-registration.ts", RF + "domain/models/grant-schedule.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-grant.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "領収書スキャン（AI 読み取り）", url: "…/books/[bookId]/scan",
+    desc: "アップロード → スキャンジョブ → Claude が JSON で読み取り → 仕訳の下書き。再読み取り・リトライも",
+    page: [BOOK + "scan/page.tsx"],
+    ui: [A + "client/components/research-fund/DocumentScan.tsx"],
+    pres: [RF + "presentation/actions/create-scan-batch.ts", RF + "presentation/actions/process-scan-jobs.ts", RF + "presentation/actions/retry-scan-job.ts", RF + "presentation/actions/reread-scan-documents.ts", RF + "presentation/loaders/load-scan.ts"],
+    app_: uc(RF, ["create-scan-batch", "process-scan-jobs", "retry-scan-job", "create-reread-batch", "list-scan-batches", "register-document"]),
+    dom: [RF + "domain/services/scan-journal-builder.ts", RF + "domain/services/issuer-payee-matcher.ts", RF + "domain/services/receipt-extraction-prompt.ts", RF + "domain/models/extracted-receipt.ts", RF + "domain/models/scan-job.ts", RF + "domain/models/scan-batch.ts"],
+    inf: [RF + "infrastructure/llm/vercel-ai-receipt-extraction-gateway.ts", RF + "infrastructure/storage/supabase-document-storage.ts", RF + "infrastructure/repositories/prisma-scan.repository.ts", RF + "infrastructure/repositories/prisma-document.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "仕訳のレビュー", url: "…/books/[bookId]/entries",
+    desc: "編集、確認済みにする、下書きに戻す、破棄、支払先・立替者の設定、精算、領収書等番号の採番",
+    page: [BOOK + "entries/page.tsx", A + "app/api/research-fund/documents/[documentId]/route.ts"],
+    ui: [A + "client/components/research-fund/JournalReview.tsx"],
+    pres: [RF + "presentation/actions/manage-journal-review.ts", RF + "presentation/loaders/load-journal-review.ts", RF + "presentation/loaders/load-journal-document.ts"],
+    app_: uc(RF, ["save-journal-entry", "create-journal-entry", "approve-journal-entries", "revert-journal-entry-to-draft", "discard-journal-entry", "set-journal-entries-payee", "set-journal-entries-advanced-by", "settle-journal-entries", "assign-receipt-numbers", "set-receipt-absence-reason", "list-journal-review"]),
+    dom: [RF + "domain/models/journal-entry.ts", RF + "domain/models/journal-review.ts", RF + "domain/models/journal-posting.ts", RF + "domain/models/receipt-number.ts", RF + "domain/models/advance.ts", RF + "domain/models/receipt-absence.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-journal-review.repository.ts", RF + "infrastructure/repositories/prisma-receipt-number.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "支払先の管理", url: "…/books/[bookId]/payees",
+    desc: "支払先の名寄せ。仕訳との紐付けは manual / rule / ai の3種類",
+    page: [BOOK + "payees/page.tsx"],
+    ui: [A + "client/components/research-fund/PayeeList.tsx"],
+    pres: [RF + "presentation/actions/manage-payees.ts", RF + "presentation/loaders/load-payees.ts"],
+    app_: uc(RF, ["save-payee", "create-payee-and-link", "list-payees"]),
+    dom: [RF + "domain/models/payee.ts", RF + "domain/services/issuer-payee-matcher.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-payee.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "使途の説明グループ", url: "…/books/[bookId]/expenditure-groups",
+    desc: "複数の支出をまとめて「何のための支出か」を説明する。並べ替え・使途方針も",
+    page: [BOOK + "expenditure-groups/page.tsx", BOOK + "expenditure-groups/new/page.tsx", BOOK + "expenditure-groups/[groupId]/page.tsx"],
+    ui: [A + "client/components/research-fund/ExpenditureGroupList.tsx", A + "client/components/research-fund/ExpenditureGroupForm.tsx"],
+    pres: [RF + "presentation/actions/manage-expenditure-groups.ts", RF + "presentation/loaders/load-expenditure-groups.ts"],
+    app_: uc(RF, ["save-expenditure-group", "delete-expenditure-group", "reorder-expenditure-groups", "save-usage-policy", "list-expenditure-groups", "get-expenditure-group-form"]),
+    dom: [RF + "domain/models/expenditure-group.ts", RF + "domain/services/expense-journal-builder.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-expenditure-group.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "読み取りプロンプトの調整", url: "…/books/[bookId]/prompts",
+    desc: "事務所ごとの追加指示を保存・テスト・ロールバック",
+    page: [BOOK + "prompts/page.tsx"],
+    ui: [A + "client/components/research-fund/PromptEditor.tsx"],
+    pres: [RF + "presentation/actions/manage-prompt.ts", RF + "presentation/actions/test-prompt.ts", RF + "presentation/loaders/load-prompts.ts"],
+    app_: uc(RF, ["save-prompt", "rollback-prompt", "test-prompt", "get-prompt-overview", "list-prompt-test-documents"]),
+    dom: [RF + "domain/models/prompt.ts", RF + "domain/services/receipt-extraction-prompt.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-prompt.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "公開", url: "…/books/[bookId]/publish",
+    desc: "確認済みの仕訳を公開済みにして webapp に出す。公開の取り消しも",
+    page: [BOOK + "publish/page.tsx"],
+    ui: [A + "client/components/research-fund/JournalPublication.tsx"],
+    pres: [RF + "presentation/actions/publish-journal-entries.ts", RF + "presentation/loaders/load-publication.ts"],
+    app_: uc(RF, ["publish-journal-entries", "unpublish-journal-entry", "get-publication-snapshot"]),
+    dom: [RF + "domain/models/publication.ts", RF + "domain/models/journal-entry-hash.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-publication.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "議員課への提出用帳簿", url: "…/books/[bookId]/submission ・ GET /api/research-fund/books/[bookId]/submission-ledger",
+    desc: "衆議院・参議院のフォーマットに合わせた CSV（UTF-8 BOM 付き）",
+    page: [BOOK + "submission/page.tsx", A + "app/api/research-fund/books/[bookId]/submission-ledger/route.ts"],
+    pres: [RF + "presentation/loaders/load-submission-ledger.ts"],
+    app_: uc(RF, ["get-submission-ledger", "export-submission-ledger-csv"]),
+    dom: [RF + "domain/models/submission-ledger.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-submission-ledger.repository.ts"] },
+];
+
+const LAYERS = [
+  ["page", "page", "l-page"], ["ui", "ui", "l-ui"], ["pres", "presentation", "l-pres"],
+  ["app_", "application", "l-app"], ["dom", "domain", "l-dom"], ["inf", "infrastructure", "l-inf"],
+];
+
+const state = { q: "", app: "all" };
+const results = document.getElementById("results");
+const count = document.getElementById("count");
+
+function haystack(f) {
+  return [f.name, f.url, f.desc || "", f.group, ...LAYERS.flatMap(([k]) => f[k] || [])].join(" ").toLowerCase();
+}
+FEATURES.forEach((f) => { f._h = haystack(f); });
+
+function el(tag, attrs, text) {
+  const e = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function render() {
+  const terms = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hits = FEATURES.filter((f) => (state.app === "all" || f.app === state.app) && terms.every((t) => f._h.includes(t)));
+  count.textContent = hits.length + " / " + FEATURES.length + " 件";
+  results.replaceChildren();
+  if (!hits.length) {
+    results.append(el("div", { class: "empty" }, "見つかりませんでした。ファイル名の一部（例：scan、xml、donor）でも探せます。"));
+    return;
+  }
+  let group = null, list = null;
+  for (const f of hits) {
+    if (f.group !== group) {
+      group = f.group;
+      results.append(el("div", { class: "group-h" }, group));
+      list = el("div", { class: "feats" });
+      results.append(list);
+    }
+    const card = el("article", { class: "feat" });
+    const h = el("div", { class: "feat-h" });
+    h.append(el("span", { class: "app " + f.app }, f.app), el("h3", null, f.name), el("span", { class: "url" }, f.url));
+    card.append(h);
+    if (f.desc) card.append(el("p", { class: "desc" }, f.desc));
+    const dl = el("dl", { class: "layers" });
+    for (const [k, label, cls] of LAYERS) {
+      const paths = f[k];
+      if (!paths || !paths.length) continue;
+      dl.append(el("dt", { class: cls }, label));
+      const dd = el("dd");
+      for (const p of paths) {
+        const b = el("button", { type: "button", class: "path", title: "クリックでコピー" }, p);
+        b.dataset.path = p;
+        dd.append(b);
+      }
+      dl.append(dd);
+    }
+    card.append(dl);
+    list.append(card);
+  }
+}
+
+results.addEventListener("click", (e) => {
+  const b = e.target.closest(".path");
+  if (!b) return;
+  const mark = () => { b.classList.add("copied"); setTimeout(() => b.classList.remove("copied"), 1200); };
+  try {
+    navigator.clipboard.writeText(b.dataset.path).then(mark, () => {
+      const r = document.createRange(); r.selectNodeContents(b);
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    });
+  } catch (err) {
+    const r = document.createRange(); r.selectNodeContents(b);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+});
+
+document.getElementById("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
+document.getElementById("chips").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-app]");
+  if (!b) return;
+  state.app = b.dataset.app;
+  document.querySelectorAll("#chips button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+});
+render();
+</script>
+
+</body>
+</html>

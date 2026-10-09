@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>まる見えのしくみ図鑑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 方眼ノート（家計簿）の上に、青インクで書いた図解ページ。1カラム＋図は横スクロール可 */
+:root {
+  --paper: #f7f9fb;
+  --grid: #dfe7ee;
+  --ink: #1b2a3a;
+  --ink-soft: #52637a;
+  --blue: #2457c5;
+  --mint: #0f9f8a;
+  --mint-wash: #dcf3ee;
+  --amber: #c77700;
+  --amber-wash: #fdf0d8;
+  --card: #ffffff;
+  --line: #c9d4df;
+  --f-display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Noto Sans JP", sans-serif;
+  --f-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121a24; --grid: #1c2733; --ink: #e4ebf3; --ink-soft: #9fb0c4;
+    --blue: #7ea6ff; --mint: #4fd1b9; --mint-wash: #143a35; --amber: #f2b350; --amber-wash: #3a2c12;
+    --card: #182230; --line: #2c3a4b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #121a24; --grid: #1c2733; --ink: #e4ebf3; --ink-soft: #9fb0c4;
+  --blue: #7ea6ff; --mint: #4fd1b9; --mint-wash: #143a35; --amber: #f2b350; --amber-wash: #3a2c12;
+  --card: #182230; --line: #2c3a4b; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.85;
+  padding-inline: 16px;
+  padding-block: 0 64px;
+}
+.wrap { max-width: 860px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.35; margin: 0; }
+p { margin: 0; }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+code { background: var(--mint-wash); color: var(--ink); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+a { color: var(--blue); }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* ---------- 表紙 ---------- */
+header.cover { padding-block: 56px 32px; display: grid; gap: 18px; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: 0.08em; color: var(--mint); }
+.cover h1 { font-size: clamp(34px, 7vw, 56px); font-weight: 900; }
+.cover h1 .hl { background: linear-gradient(transparent 62%, var(--mint-wash) 62%); }
+.lead { font-size: 17px; max-width: 40em; color: var(--ink-soft); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; padding: 0; list-style: none; }
+.toc a {
+  display: inline-block; text-decoration: none; color: var(--ink); font-size: 14px;
+  border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 14px;
+}
+.toc a:hover { border-color: var(--mint); }
+.toc .n { font-family: var(--f-mono); color: var(--mint); margin-right: 6px; }
+
+/* ---------- 章 ---------- */
+section.chap { padding-block: 40px 8px; display: grid; gap: 18px; scroll-margin-top: 16px; }
+.chap-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+.chap-head .num { font-family: var(--f-mono); font-weight: 600; color: var(--mint); font-size: 15px; }
+.chap-head h2 { font-size: clamp(22px, 4.2vw, 30px); font-weight: 900; }
+.chap p { max-width: 42em; }
+h3 { font-size: 19px; font-weight: 700; }
+
+.note {
+  background: var(--amber-wash); border: 1.5px dashed var(--amber); border-radius: 10px;
+  padding: 14px 18px; font-size: 15px; display: grid; gap: 4px;
+}
+.note b { font-family: var(--f-display); color: var(--amber); }
+
+/* 2つのアプリ */
+.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.app {
+  background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 18px 20px;
+  display: grid; gap: 8px; align-content: start; min-width: 0;
+}
+.app .tag { font-family: var(--f-mono); font-size: 12px; color: var(--ink-soft); }
+.app h3 { display: flex; gap: 10px; align-items: center; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.app ul { margin: 0; padding-left: 1.2em; font-size: 15px; }
+
+/* 図 */
+figure { margin: 0; display: grid; gap: 8px; }
+.diagram { overflow-x: auto; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; }
+.diagram svg { display: block; min-width: 640px; width: 100%; height: auto; }
+figcaption { font-size: 13px; color: var(--ink-soft); }
+svg text { font-family: var(--f-body); fill: var(--ink); }
+svg .sub { fill: var(--ink-soft); font-size: 11px; }
+svg .mono { font-family: var(--f-mono); }
+
+/* レイヤー（お店たとえ） */
+.layers { display: grid; gap: 0; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+.layer { display: grid; grid-template-columns: 150px 1fr; gap: 16px; padding: 16px 18px; border-top: 1.5px solid var(--line); }
+.layer:first-child { border-top: none; }
+.layer .who { font-family: var(--f-display); font-weight: 700; font-size: 17px; display: grid; gap: 2px; align-content: start; }
+.layer .who .mono { font-weight: 400; color: var(--mint); font-size: 12px; }
+.layer .what { display: grid; gap: 4px; font-size: 15px; min-width: 0; }
+.layer .ex { color: var(--ink-soft); font-size: 13.5px; }
+.arrow-down { text-align: center; font-size: 13px; color: var(--ink-soft); padding: 2px 0; background: var(--paper); border-top: 1.5px solid var(--line); }
+@media (max-width: 560px) { .layer { grid-template-columns: 1fr; gap: 6px; } }
+
+/* 手順 */
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: s; }
+ol.steps li {
+  counter-increment: s; position: relative; padding: 0 0 22px 52px; display: grid; gap: 4px;
+}
+ol.steps li::before {
+  content: counter(s); position: absolute; left: 0; top: 0; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--card); border: 2px solid var(--mint); color: var(--mint);
+  font-family: var(--f-mono); font-weight: 600; display: grid; place-items: center; font-size: 15px;
+}
+ol.steps li::after {
+  content: ""; position: absolute; left: 16px; top: 36px; bottom: 2px; border-left: 2px dotted var(--line);
+}
+ol.steps li:last-child::after { display: none; }
+ol.steps .t { font-weight: 700; font-family: var(--f-display); font-size: 17px; }
+ol.steps .d { font-size: 15px; }
+ol.steps .f { font-size: 12.5px; color: var(--ink-soft); font-family: var(--f-mono); overflow-wrap: anywhere; }
+
+/* 道具箱 */
+.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.tool { background: var(--card); border: 1.5px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.tool .name { font-family: var(--f-mono); font-weight: 600; font-size: 15px; color: var(--blue); }
+.tool .role { font-size: 12px; color: var(--mint); font-weight: 700; letter-spacing: 0.04em; }
+.tool .desc { font-size: 14px; }
+.tool .where { font-size: 11.5px; color: var(--ink-soft); font-family: var(--f-mono); }
+.group-label { font-family: var(--f-display); font-weight: 700; font-size: 16px; margin-top: 10px; display: flex; gap: 10px; align-items: center; }
+.group-label::after { content: ""; flex: 1; border-top: 1.5px dashed var(--line); }
+
+/* 表 */
+.table-wrap { overflow-x: auto; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14.5px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-display); font-size: 13px; color: var(--ink-soft); background: var(--paper); }
+tr:last-child td { border-bottom: none; }
+td.mono { font-family: var(--f-mono); font-size: 13px; color: var(--blue); white-space: nowrap; }
+
+/* 用語 */
+dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: 10px 20px; margin: 0; font-size: 15px; }
+dl.glossary dt { font-weight: 700; font-family: var(--f-display); }
+dl.glossary dd { margin: 0; }
+@media (max-width: 560px) { dl.glossary { grid-template-columns: 1fr; gap: 2px; } dl.glossary dd { margin-bottom: 10px; } }
+
+footer { margin-top: 48px; font-size: 13px; color: var(--ink-soft); border-top: 1.5px solid var(--line); padding-top: 16px; }
+</style>
+
+<div class="wrap">
+
+<header class="cover">
+  <div class="eyebrow">team-mirai / marumie ・ 中学生向けガイド</div>
+  <h1>「みらい<span class="hl">まる見え</span>政治資金」の<br>中身をのぞいてみよう</h1>
+  <p class="lead">政治団体や国会議員が「いくら受け取って、何に使ったか」を、だれでもグラフで見られるようにするWebアプリです。このページでは、そのアプリがどんな部品でできていて、データがどう流れているのかを、順番に説明します。</p>
+  <ul class="toc">
+    <li><a href="#what"><span class="n">1</span>何をするアプリ？</a></li>
+    <li><a href="#map"><span class="n">2</span>全体の地図</a></li>
+    <li><a href="#layers"><span class="n">3</span>プログラムの役割分担</a></li>
+    <li><a href="#flow-in"><span class="n">4</span>データを登録する流れ</a></li>
+    <li><a href="#flow-out"><span class="n">5</span>グラフが表示される流れ</a></li>
+    <li><a href="#rf"><span class="n">6</span>調研費と領収書AI</a></li>
+    <li><a href="#db"><span class="n">7</span>データベースの中身</a></li>
+    <li><a href="#tools"><span class="n">8</span>使っている道具</a></li>
+    <li><a href="#quality"><span class="n">9</span>ミスを防ぐしくみ</a></li>
+    <li><a href="#words"><span class="n">10</span>用語集</a></li>
+  </ul>
+</header>
+
+<!-- 1 -->
+<section class="chap" id="what">
+  <div class="chap-head"><span class="num">1</span><h2>何をするアプリ？</h2></div>
+  <p>政治団体は、毎年のお金の出入りを「政治資金収支報告書」という書類にまとめて国に出す決まりがあります。でもその書類は数字の表ばかりで、ふつうの人が読むのは大変です。</p>
+  <p>そこでこのアプリは、団体がふだん使っている<b>会計ソフトのデータ</b>を取り込み、<b>お金の流れを図やグラフ</b>にして公開します。さらに、国に出す報告書のデータ（XMLという形式のファイル）を作るお手伝いもします。</p>
+  <p>最近は、国会議員に支給される<b>「調研費（ちょうけんひ）」</b>の使い道を、領収書つきで公開する機能も加わりました（6章）。</p>
+  <p>このアプリは、じつは<b>2つのWebアプリ</b>のセットです。</p>
+  <div class="duo">
+    <div class="app">
+      <span class="tag">webapp/ ・ だれでも見られる</span>
+      <h3><span class="dot" style="background:var(--mint)"></span>公開サイト</h3>
+      <ul>
+        <li>収入と支出の流れ図（サンキー図）</li>
+        <li>月ごとの収支グラフ</li>
+        <li>貸借対照表（いま持っている財産と借金）</li>
+        <li>取引の一覧表とCSVダウンロード</li>
+        <li>議員ごとの調研費の使い道と領収書</li>
+      </ul>
+    </div>
+    <div class="app">
+      <span class="tag">admin/ ・ 団体のスタッフだけ</span>
+      <h3><span class="dot" style="background:var(--blue)"></span>管理画面</h3>
+      <ul>
+        <li>ログイン（パスワードで本人確認）</li>
+        <li>会計ソフトのCSVファイルを取り込む</li>
+        <li>取引先や寄附した人の情報を整理する</li>
+        <li>政治資金報告書のXMLを作る</li>
+        <li>領収書をAIで読み取って、調研費の帳簿を作る</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><b>ポイント</b>見る人用と管理する人用を分けておくと、公開サイトには「見せる機能」しかないので、だれかが勝手にデータを書きかえる入り口ができにくくなります。</div>
+</section>
+
+<!-- 2 -->
+<section class="chap" id="map">
+  <div class="chap-head"><span class="num">2</span><h2>全体の地図</h2></div>
+  <p>アプリを動かしているのは、いくつかの「建物」です。インターネットの向こうにあるコンピューター（サーバー）が、それぞれ別の仕事をしています。</p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 760 430" role="img" aria-labelledby="map-title">
+        <title id="map-title">会計ソフトから管理画面、データベース、公開サイト、閲覧者までのつながり</title>
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-soft)"/>
+          </marker>
+        </defs>
+        <!-- Vercel frame -->
+        <rect x="200" y="20" width="360" height="390" rx="14" style="fill:none;stroke:var(--line);stroke-width:2;stroke-dasharray:6 5"/>
+        <text x="216" y="44" class="mono" style="font-size:12px;fill:var(--ink-soft)">Vercel（アプリを動かすサーバー）</text>
+
+        <!-- 会計ソフト -->
+        <rect x="16" y="70" width="160" height="72" rx="10" style="fill:var(--card);stroke:var(--ink-soft);stroke-width:1.5"/>
+        <text x="96" y="100" text-anchor="middle" style="font-size:15px;font-weight:700">会計ソフト</text>
+        <text x="96" y="122" text-anchor="middle" class="sub">MFクラウド など</text>
+
+        <!-- スタッフ -->
+        <rect x="16" y="190" width="160" height="72" rx="10" style="fill:var(--card);stroke:var(--ink-soft);stroke-width:1.5"/>
+        <text x="96" y="220" text-anchor="middle" style="font-size:15px;font-weight:700">団体スタッフ</text>
+        <text x="96" y="242" text-anchor="middle" class="sub">パソコンのブラウザ</text>
+
+        <!-- 市民 -->
+        <rect x="584" y="190" width="160" height="72" rx="10" style="fill:var(--card);stroke:var(--ink-soft);stroke-width:1.5"/>
+        <text x="664" y="220" text-anchor="middle" style="font-size:15px;font-weight:700">見る人（市民）</text>
+        <text x="664" y="242" text-anchor="middle" class="sub">スマホ・パソコン</text>
+
+        <!-- admin -->
+        <rect x="230" y="70" width="140" height="110" rx="12" style="fill:var(--card);stroke:var(--blue);stroke-width:2.5"/>
+        <text x="300" y="104" text-anchor="middle" style="font-size:16px;font-weight:700">管理画面</text>
+        <text x="300" y="126" text-anchor="middle" class="sub mono">admin</text>
+        <text x="300" y="150" text-anchor="middle" class="sub">取り込み・報告書作成</text>
+
+        <!-- webapp -->
+        <rect x="400" y="70" width="140" height="110" rx="12" style="fill:var(--card);stroke:var(--mint);stroke-width:2.5"/>
+        <text x="470" y="104" text-anchor="middle" style="font-size:16px;font-weight:700">公開サイト</text>
+        <text x="470" y="126" text-anchor="middle" class="sub mono">webapp</text>
+        <text x="470" y="150" text-anchor="middle" class="sub">グラフで見せる</text>
+
+        <!-- DB -->
+        <path d="M290 290 a90 16 0 0 0 180 0 v70 a90 16 0 0 1 -180 0 z" style="fill:var(--mint-wash);stroke:var(--mint);stroke-width:2"/>
+        <ellipse cx="380" cy="290" rx="90" ry="16" style="fill:var(--card);stroke:var(--mint);stroke-width:2"/>
+        <text x="380" y="336" text-anchor="middle" style="font-size:15px;font-weight:700">データベース</text>
+        <text x="380" y="358" text-anchor="middle" class="sub">Supabase（PostgreSQL）</text>
+
+        <!-- AI -->
+        <rect x="16" y="320" width="160" height="72" rx="10" style="fill:var(--amber-wash);stroke:var(--amber);stroke-width:1.5"/>
+        <text x="96" y="350" text-anchor="middle" style="font-size:15px;font-weight:700">AI（Claude）</text>
+        <text x="96" y="372" text-anchor="middle" class="sub">取引先の住所さがし</text>
+
+        <!-- arrows -->
+        <path d="M176 106 H226" style="stroke:var(--ink-soft);stroke-width:1.8;fill:none" marker-end="url(#ah)"/>
+        <text x="200" y="98" text-anchor="middle" class="sub">CSV</text>
+        <path d="M176 226 C200 226 210 170 226 160" style="stroke:var(--ink-soft);stroke-width:1.8;fill:none" marker-end="url(#ah)"/>
+        <path d="M300 182 V270" style="stroke:var(--blue);stroke-width:2;fill:none" marker-end="url(#ah)"/>
+        <text x="308" y="232" class="sub">書きこむ</text>
+        <path d="M460 272 V184" style="stroke:var(--mint);stroke-width:2;fill:none" marker-end="url(#ah)"/>
+        <text x="468" y="232" class="sub">読みだす</text>
+        <path d="M372 112 H396" style="stroke:var(--ink-soft);stroke-width:1.8;fill:none;stroke-dasharray:4 3" marker-end="url(#ah)"/>
+        <text x="385" y="64" text-anchor="middle" class="sub">「更新したよ」の合図</text>
+        <path d="M544 140 C570 150 580 190 600 192" style="stroke:var(--mint);stroke-width:2;fill:none" marker-end="url(#ah)"/>
+        <path d="M230 168 C190 230 150 280 120 316" style="stroke:var(--amber);stroke-width:1.8;fill:none;stroke-dasharray:4 3" marker-end="url(#ah)"/>
+      </svg>
+    </div>
+    <figcaption>実線はデータの流れ、点線は「お知らせ」や「問い合わせ」。管理画面と公開サイトは同じデータベースを共有しています。</figcaption>
+  </figure>
+  <p>大事なのは、<b>データベースが1つだけ</b>ということです。管理画面で書きこんだデータを、公開サイトが読みだして表示します。黒板に先生が書いた内容を、クラス全員が見るのに似ています。</p>
+</section>
+
+<!-- 3 -->
+<section class="chap" id="layers">
+  <div class="chap-head"><span class="num">3</span><h2>プログラムの役割分担</h2></div>
+  <p>プログラムのファイルは数百個あります。全部がバラバラに好き勝手なことをすると、どこを直せばいいのか分からなくなります。そこでこのアプリでは、<b>レストランの役割分担</b>のように、ファイルを4つの「層（レイヤー）」に分けています。これを<b>レイヤードアーキテクチャ</b>と呼びます。</p>
+  <div class="layers">
+    <div class="layer">
+      <div class="who">ホール係<span class="mono">presentation/</span></div>
+      <div class="what">
+        <span>お客さん（画面）から注文を受けて、できた料理を運ぶ。ログインしているかのチェックもここ。</span>
+        <span class="ex">例：<code>loaders/</code> はデータを取ってくる係、<code>actions/</code> は「保存」ボタンなどの操作を受ける係</span>
+      </div>
+    </div>
+    <div class="arrow-down">↓ 注文を伝える</div>
+    <div class="layer">
+      <div class="who">店長<span class="mono">application/</span></div>
+      <div class="what">
+        <span>注文を見て「まず倉庫から材料を出して、次にレシピどおり作って…」と段取りを決める。</span>
+        <span class="ex">例：<code>usecases/preview-mf-csv-usecase.ts</code>（CSVを読んで確認画面用のデータを作る段取り）</span>
+      </div>
+    </div>
+    <div class="arrow-down">↓ 段取りにそって</div>
+    <div class="layer">
+      <div class="who">レシピ・ルール<span class="mono">domain/</span></div>
+      <div class="what">
+        <span>このお店ならではの決まりごと。「寄附は1人いくらまで」「この科目は収入」など、政治資金ならではのルールが書かれている。</span>
+        <span class="ex">例：<code>services/sankey-data-builder.ts</code>（流れ図の形にデータを組み立てる）</span>
+      </div>
+    </div>
+    <div class="arrow-down">↓ 材料をたのむ</div>
+    <div class="layer">
+      <div class="who">倉庫係<span class="mono">infrastructure/</span></div>
+      <div class="what">
+        <span>データベースや外のサービス（AIなど）と実際にやりとりする。倉庫の場所が変わっても、ここだけ直せばOK。</span>
+        <span class="ex">例：<code>repositories/prisma-transaction.repository.ts</code>（取引データを出し入れする）</span>
+      </div>
+    </div>
+  </div>
+  <p>さらに、仕事の内容ごとに「部署」も分けています。これを<b>Bounded Context（境界づけられたコンテキスト）</b>と呼びます。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>部署の名前</th><th>アプリ</th><th>担当している仕事</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">public-finance</td><td>公開サイト</td><td>政治資金のデータを集計して、グラフ用に整える</td></tr>
+        <tr><td class="mono">research-fund</td><td>公開サイト</td><td>公開された調研費を、議員ごとのページに表示する</td></tr>
+        <tr><td class="mono">data-import</td><td>管理画面</td><td>会計ソフトのCSVを読みこみ、確認してから保存する</td></tr>
+        <tr><td class="mono">report</td><td>管理画面</td><td>取引先・寄附者の管理と、報告書XMLの作成</td></tr>
+        <tr><td class="mono">research-fund</td><td>管理画面</td><td>領収書の読み取り、調研費の帳簿づくり、提出用CSVと公開</td></tr>
+        <tr><td class="mono">auth</td><td>管理画面</td><td>ログインと、だれが何をしてよいかの管理</td></tr>
+        <tr><td class="mono">shared</td><td>共通</td><td>どの部署も使う道具（データベースへの接続など）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>なぜこうするの？</b>「グラフの色がおかしい」ならホール係、「集計の計算がおかしい」ならレシピ、というように、問題が起きたときに探す場所をしぼれるからです。たくさんの人が同時に開発しても、ぶつかりにくくなります。</div>
+</section>
+
+<!-- 4 -->
+<section class="chap" id="flow-in">
+  <div class="chap-head"><span class="num">4</span><h2>データを登録する流れ</h2></div>
+  <p>団体のスタッフが、会計ソフトから出したCSVファイルを管理画面にアップロードしたとき、裏側では次のことが順番に起きています。</p>
+  <ol class="steps">
+    <li>
+      <span class="t">ログインしているか確認</span>
+      <span class="d">まず「この人は本当に団体のスタッフ？」をチェックします。ログインしていなければ、ここで止まります。</span>
+      <span class="f">auth / require-auth.ts ・ proxy.ts</span>
+    </li>
+    <li>
+      <span class="t">文字化けを直して読みこむ</span>
+      <span class="d">会計ソフトのCSVは、古い日本語の文字コード（Shift_JIS）で保存されていることがあります。そのままだと文字化けするので、変換してから1行ずつ読みます。</span>
+      <span class="f">data-import / encoding-converter.ts（iconv-lite を使用）</span>
+    </li>
+    <li>
+      <span class="t">アプリ用の形に変換</span>
+      <span class="d">CSVの1行（日付・勘定科目・金額…）を、アプリが扱いやすい「取引」の形に変えます。「これは収入？支出？」もここで判定します。</span>
+      <span class="f">data-import / mf-record-converter.ts</span>
+    </li>
+    <li>
+      <span class="t">おかしなデータがないか点検</span>
+      <span class="d">金額が空っぽ、日付が変、すでに登録済み…などを調べ、問題のある行に印をつけます。</span>
+      <span class="f">data-import / transaction-validator.ts</span>
+    </li>
+    <li>
+      <span class="t">確認画面（プレビュー）を表示</span>
+      <span class="d">いきなり保存せず、「この内容で登録しますか？」と見せます。人間が目で確かめてから決められます。</span>
+    </li>
+    <li>
+      <span class="t">データベースに保存</span>
+      <span class="d">「登録」ボタンが押されたら、正しい行だけをデータベースに書きこみます。</span>
+      <span class="f">data-import / upload-csv.ts → save-preview-transactions-usecase.ts</span>
+    </li>
+    <li>
+      <span class="t">公開サイトに「更新したよ」と合図</span>
+      <span class="d">公開サイトに合言葉（トークン）つきでお知らせを送ります。公開サイトは古いデータの控えを捨てて、次から新しいデータを表示します。</span>
+      <span class="f">shared / webapp-cache-invalidator.ts → webapp /api/refresh</span>
+    </li>
+  </ol>
+</section>
+
+<!-- 5 -->
+<section class="chap" id="flow-out">
+  <div class="chap-head"><span class="num">5</span><h2>グラフが表示される流れ</h2></div>
+  <p>市民がスマホで公開サイトを開いたときの流れです。URLは <code>/o/団体名/2026</code> のような形になっています。</p>
+  <ol class="steps">
+    <li>
+      <span class="t">URLから「どの団体の、何年分か」を読みとる</span>
+      <span class="d">Next.js の App Router が、URLの形に合わせてページのプログラムを選びます。</span>
+      <span class="f">webapp/src/app/o/[slug]/[year]/page.tsx</span>
+    </li>
+    <li>
+      <span class="t">まず「控え（キャッシュ）」を見る</span>
+      <span class="d">同じページを見る人は大勢います。毎回データベースで計算するとおそくなるので、一度作った結果を控えておき、本番では最大1時間使い回します。</span>
+      <span class="f">load-top-page-data.ts（unstable_cache ・ 3600秒）</span>
+    </li>
+    <li>
+      <span class="t">控えがなければ、データベースから集計</span>
+      <span class="d">取引を月ごとに合計したり、収入→支出の流れ図用に組み立てたりします。この計算はすべてサーバー側でやります。</span>
+      <span class="f">usecases/get-sankey-aggregation-usecase.ts など</span>
+    </li>
+    <li>
+      <span class="t">サーバーでHTMLを作って送る</span>
+      <span class="d">React のサーバーコンポーネントが、ページの大部分を完成させてから送ります。スマホ側の仕事が減るので、表示が速くなります。</span>
+    </li>
+    <li>
+      <span class="t">スマホの中でグラフを描く</span>
+      <span class="d">動くグラフ（マウスを乗せると数字が出るなど）だけは、スマホやパソコンの中で描きます。流れ図は Nivo、月別グラフは ApexCharts という道具を使っています。</span>
+      <span class="f">client/components/top-page/features/charts/</span>
+    </li>
+  </ol>
+  <div class="note"><b>サーバーとブラウザの分担</b>重い計算や秘密の情報（データベースのパスワードなど）はサーバーに置き、ブラウザには「見た目」と「さわったときの反応」だけをまかせる、というのがこのアプリの基本方針です。</div>
+</section>
+
+<!-- 6 research fund -->
+<section class="chap" id="rf">
+  <div class="chap-head"><span class="num">6</span><h2>調研費と領収書AI</h2></div>
+  <p>国会議員には、政治資金とは別に<b>「調査研究広報滞在費（調研費）」</b>というお金が毎月支給されます。このお金の使い道を、だれでも確かめられるように公開するのが新しい機能です。どんなお店で何に使ったかを、領収書の画像といっしょに見せます。</p>
+  <p>領収書は1年で何百枚にもなります。全部を人が手で打ちこむのは大変なので、ここでAIが活躍します。</p>
+  <ol class="steps">
+    <li>
+      <span class="t">領収書をアップロード</span>
+      <span class="d">議員事務所のスタッフが、領収書の写真やPDFを管理画面に入れます。ファイルは Supabase Storage（ファイル置き場）に保存されます。</span>
+      <span class="f">research-fund / create-scan-batch-usecase.ts</span>
+    </li>
+    <li>
+      <span class="t">AI（Claude）が領収書を読む</span>
+      <span class="d">画像を見て、日付・お店の名前・金額・品目を取り出します。答えは決まった形（JSON）で返してもらい、形がおかしければはじきます。</span>
+      <span class="f">vercel-ai-receipt-extraction-gateway.ts</span>
+    </li>
+    <li>
+      <span class="t">仕訳（しわけ）の下書きができる</span>
+      <span class="d">読み取った内容から「何のために、いくら使ったか」を記録した帳簿の1行（仕訳）を自動で作ります。支払先のお店も、名前から自動で結びつけます。</span>
+      <span class="f">scan-journal-builder.ts ・ issuer-payee-matcher.ts</span>
+    </li>
+    <li>
+      <span class="t">人がチェックして「確認済み」に</span>
+      <span class="d">AIはまちがえることがあります。スタッフが1件ずつ見て、直してから確認済みにします。読みまちがいが多いときは、AIへの指示文（プロンプト）を事務所ごとに調整することもできます。</span>
+    </li>
+    <li>
+      <span class="t">公開する ＆ 提出用のファイルを作る</span>
+      <span class="d">確認済みの仕訳を「公開済み」にすると、公開サイトの議員ページ（<code>/p/議員名/年</code>）に出ます。衆議院・参議院の担当課に出すためのCSVもここから作れます。</span>
+    </li>
+  </ol>
+  <div class="note"><b>個人情報への気くばり</b>仕訳は「下書き → 確認済み → 公開済み」の順にしか進めないルールが、プログラムの「レシピ（domain）」の層に書かれています。また、支払先の住所などは公開サイトには出さず、提出用のファイルにだけ入れます。</div>
+</section>
+
+<!-- 7 -->
+<section class="chap" id="db">
+  <div class="chap-head"><span class="num">7</span><h2>データベースの中身</h2></div>
+  <p>データベースは、Excelのシートがたくさん入ったファイルのようなものです。シート1枚を<b>テーブル</b>と呼びます。主なテーブルはこちら。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>テーブル</th><th>入っているもの</th><th>たとえると</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">PoliticalOrganization</td><td>政治団体の名前やURL用の名前</td><td>クラス名簿</td></tr>
+        <tr><td class="mono">Transaction</td><td>1件1件のお金の出入り（日付・科目・金額・説明）</td><td>家計簿の1行</td></tr>
+        <tr><td class="mono">BalanceSnapshot</td><td>ある日の時点での残高</td><td>通帳の残高ページ</td></tr>
+        <tr><td class="mono">Counterpart</td><td>お金を払った相手（会社など）と住所</td><td>お店の連絡先リスト</td></tr>
+        <tr><td class="mono">Donor</td><td>寄附をしてくれた人・団体</td><td>お礼状の宛名リスト</td></tr>
+        <tr><td class="mono">OrganizationReportProfile</td><td>報告書の表紙に書く代表者などの情報</td><td>書類の表紙</td></tr>
+        <tr><td class="mono">Politician</td><td>国会議員の名前やURL用の名前</td><td>議員の名簿</td></tr>
+        <tr><td class="mono">ResearchFundBook</td><td>議員1人・1年分の調研費の帳簿</td><td>1年分の家計簿ノート</td></tr>
+        <tr><td class="mono">ResearchFundDocument</td><td>アップロードされた領収書</td><td>ノートに貼ったレシート</td></tr>
+        <tr><td class="mono">ResearchFundJournalEntry</td><td>調研費の使い道1件（下書き・確認済み・公開済み）</td><td>家計簿の1行</td></tr>
+        <tr><td class="mono">User / Tenant</td><td>管理画面にログインできる人と、所属</td><td>職員室の名簿</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>ここに出したのは一部で、全部で20以上のテーブルがあります。テーブルどうしは線でつながっています。たとえば「取引」には「どの団体のものか」が書かれていて、団体を消すとその団体の取引もまとめて消えるように設定されています。この設計図は <code>prisma/schema.prisma</code> という1つのファイルに書かれています。</p>
+</section>
+
+<!-- 7 -->
+<section class="chap" id="tools">
+  <div class="chap-head"><span class="num">8</span><h2>使っている道具</h2></div>
+  <p>アプリはゼロから全部手作りしているわけではありません。世界中の開発者が作って公開している「道具（ライブラリ）」を組み合わせています。料理でいえば、包丁やフライパンを自分で作らないのと同じです。</p>
+
+  <div class="group-label">土台</div>
+  <div class="tools">
+    <div class="tool"><span class="role">言語</span><span class="name">TypeScript</span><span class="desc">JavaScriptに「型」のルールを足した言語。数字を入れる場所に文字を入れる、といったミスを書いている最中に見つけてくれる。</span></div>
+    <div class="tool"><span class="role">Webアプリの骨組み</span><span class="name">Next.js 16</span><span class="desc">ページの切りかえ、サーバーでの処理、キャッシュなどをまとめて面倒みてくれる。両アプリで使用。</span></div>
+    <div class="tool"><span class="role">画面の部品づくり</span><span class="name">React 19</span><span class="desc">画面を「ボタン」「表」「グラフ」のような部品に分けて組み立てる道具。</span></div>
+    <div class="tool"><span class="role">見た目</span><span class="name">Tailwind CSS v4</span><span class="desc">色や余白を <code>p-4</code> <code>text-lg</code> のような短い名前で指定できる。</span></div>
+  </div>
+
+  <div class="group-label">データ</div>
+  <div class="tools">
+    <div class="tool"><span class="role">データベース</span><span class="name">Supabase / PostgreSQL</span><span class="desc">データを保存する場所。ログイン機能もSupabaseの仕組みを使っている。</span></div>
+    <div class="tool"><span class="role">ファイル置き場</span><span class="name">Supabase Storage</span><span class="desc">領収書の画像やPDFをしまっておく場所。</span></div>
+    <div class="tool"><span class="role">データベースとの通訳</span><span class="name">Prisma</span><span class="desc">データベース専用の言葉（SQL）を書かなくても、TypeScriptで「取引を全部ちょうだい」と頼める。</span></div>
+    <div class="tool"><span class="role">入力チェック</span><span class="name">zod</span><span class="desc">フォームに入力された値が正しい形か調べる。</span><span class="where">admin</span></div>
+    <div class="tool"><span class="role">文字コード変換</span><span class="name">iconv-lite</span><span class="desc">Shift_JIS のCSVを文字化けせずに読むため。</span><span class="where">admin</span></div>
+    <div class="tool"><span class="role">XML作成</span><span class="name">xmlbuilder2</span><span class="desc">国に出す報告書の形式（XML）を組み立てる。</span><span class="where">admin</span></div>
+  </div>
+
+  <div class="group-label">グラフと画面部品</div>
+  <div class="tools">
+    <div class="tool"><span class="role">流れ図</span><span class="name">Nivo (sankey)</span><span class="desc">収入から支出へ、太さでお金の量を表す「サンキー図」を描く。</span><span class="where">webapp</span></div>
+    <div class="tool"><span class="role">棒・線グラフ</span><span class="name">ApexCharts</span><span class="desc">月ごとの収入・支出の推移を描く。</span><span class="where">webapp</span></div>
+    <div class="tool"><span class="role">表</span><span class="name">TanStack Table</span><span class="desc">並べかえや絞りこみができる取引一覧表。</span><span class="where">admin</span></div>
+    <div class="tool"><span class="role">部品セット</span><span class="name">Radix UI ・ Phosphor Icons ・ sonner</span><span class="desc">ダイアログ、チェックボックス、アイコン、「保存しました」のお知らせ表示など。</span><span class="where">admin</span></div>
+  </div>
+
+  <div class="group-label">AI</div>
+  <div class="tools">
+    <div class="tool"><span class="role">AIとの接続</span><span class="name">Vercel AI SDK + Claude</span><span class="desc">領収書の画像を読んで仕訳の下書きを作る。取引先の会社名から住所の候補も探す。どちらも最後に決めるのは人間。</span><span class="where">admin / research-fund ・ report</span></div>
+  </div>
+
+  <div class="group-label">置き場所と開発の道具</div>
+  <div class="tools">
+    <div class="tool"><span class="role">公開</span><span class="name">Vercel</span><span class="desc">作ったアプリをインターネットに公開して動かし続けるサービス。</span></div>
+    <div class="tool"><span class="role">道具の管理</span><span class="name">pnpm</span><span class="desc">上の道具たちをダウンロードして、バージョンをそろえる。</span></div>
+    <div class="tool"><span class="role">コードの整頓</span><span class="name">Biome</span><span class="desc">書き方のクセを統一し、まちがいやすい書き方を指摘する。</span></div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="chap" id="quality">
+  <div class="chap-head"><span class="num">9</span><h2>ミスを防ぐしくみ</h2></div>
+  <p>お金のデータをあつかうので、まちがいは許されません。そこで、プログラムを変更するたびに、機械が自動で何重にもチェックします。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>チェック</th><th>道具</th><th>何を調べる？</th></tr></thead>
+      <tbody>
+        <tr><td>小さなテスト</td><td class="mono">Jest</td><td>「この計算に1000と2000を入れたら3000になる？」のように、部品ごとに答え合わせ</td></tr>
+        <tr><td>通しのテスト</td><td class="mono">Playwright</td><td>ロボットが本物のブラウザを操作して、ログイン→アップロード→表示…を試す</td></tr>
+        <tr><td>型チェック</td><td class="mono">tsc</td><td>TypeScript のルール違反がないか</td></tr>
+        <tr><td>書き方チェック</td><td class="mono">Biome</td><td>書き方の統一と、あやしい書き方の発見</td></tr>
+        <tr><td>使われていないもの</td><td class="mono">knip</td><td>だれも使っていないファイルや道具が残っていないか</td></tr>
+        <tr><td>役割分担のルール</td><td class="mono">dependency-cruiser</td><td>3章の「層」のルールを破って、ホール係が直接倉庫に行っていないか</td></tr>
+        <tr><td>店長の仕事の形</td><td class="mono">check:usecase-shape</td><td>店長（usecase）1人が1つの仕事だけを受けもっているか</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>これらは <code>pnpm verify</code> という1つの命令でまとめて実行され、GitHubに送る前（push前）とGitHub上（CI）の両方で自動的に動きます。1つでも失敗すると、変更は取りこまれません。</p>
+  <p>さらに、すべての変更は AI のレビュー係（CodeRabbit）にもチェックされます。一部の決まった作業は、AIが自分でプログラムを書いて提案するしくみも動いています。最後に本番のサイトへ出すボタンを押すのは人間です。</p>
+  <div class="note"><b>オープンソース</b>このアプリのプログラムは GitHub で全部公開されていて（AGPL-3.0ライセンス）、だれでも読めます。「お金の流れを透明にする」アプリ自身も、中身が透明になっています。</div>
+</section>
+
+<!-- 9 -->
+<section class="chap" id="words">
+  <div class="chap-head"><span class="num">10</span><h2>用語集</h2></div>
+  <dl class="glossary">
+    <dt>サーバー</dt><dd>インターネットの向こうで、たのまれた仕事をするコンピューター。</dd>
+    <dt>ブラウザ</dt><dd>ChromeやSafariなど、Webページを見るためのアプリ。</dd>
+    <dt>データベース</dt><dd>データを整理して保存し、すばやく取りだせるようにした入れ物。</dd>
+    <dt>CSV</dt><dd>表のデータを「,（カンマ）」で区切って書いたテキストファイル。Excelでも開ける。</dd>
+    <dt>XML</dt><dd>&lt;名前&gt;山田&lt;/名前&gt; のように、タグでデータをはさんで書くファイル形式。報告書の提出に使う。</dd>
+    <dt>キャッシュ</dt><dd>一度作った結果の控え。同じものをまた作らずにすむので速くなる。</dd>
+    <dt>ライブラリ</dt><dd>だれかが作って公開している、再利用できるプログラムの部品。</dd>
+    <dt>トークン</dt><dd>「本物のお知らせです」と証明するための合言葉。</dd>
+    <dt>サンキー図</dt><dd>線の太さで量を表しながら、どこからどこへ流れたかを描く図。</dd>
+    <dt>調研費</dt><dd>調査研究広報滞在費。国会議員に毎月支給される、調査や広報などのためのお金。</dd>
+    <dt>仕訳（しわけ）</dt><dd>「いつ・何に・いくら」を帳簿に書く1行のこと。</dd>
+    <dt>プロンプト</dt><dd>AIへの指示文。書き方しだいでAIの答えが変わる。</dd>
+    <dt>CI</dt><dd>変更が届くたびに、自動でテストやチェックを走らせる仕組み。</dd>
+  </dl>
+</section>
+
+<footer>
+  リポジトリ <span class="mono">team-mirai/marumie</span> の main ブランチ（2026年10月6日時点）のコードをもとに作成。ファイル名やライブラリは、今後の開発で変わることがあります。
+</footer>
+
+</div>
+
+</body>
+</html>

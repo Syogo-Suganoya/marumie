@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Montserrat:wght@600;700&display=swap">
+<style>
+:root {
+  --teal: #2aa693;
+  --teal-dark: #238778;
+  --teal-light: #30bca7;
+  --mint: #e2f6f3;
+  --ink: #1f2937;
+  --ink-soft: #4b5563;
+  --muted: #85868e;
+  --red: #dc2626;
+  --white: #ffffff;
+  --line: #cfe9e3;
+  --f: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+  --f-en: "Montserrat", "Noto Sans JP", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1600px; height: 900px; overflow: hidden; }
+body { font-family: var(--f); color: var(--ink); background: #fff; }
+.slide {
+  display: none; position: relative; width: 1600px; height: 900px; overflow: hidden;
+  background: linear-gradient(135deg, #e3f5f6 0%, #eaf6ee 55%, #f1f7e6 100%);
+  padding: 72px 96px 0 128px;
+}
+.slide.on { display: block; }
+.slide::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 24px; background: var(--teal); }
+
+.kicker { display: inline-flex; align-items: center; gap: 14px; font-weight: 700; color: var(--teal-dark); font-size: 26px; }
+.kicker .no { font-family: var(--f-en); background: var(--teal); color: #fff; border-radius: 8px; padding: 2px 14px; font-size: 22px; }
+h1 { font-size: 68px; font-weight: 900; line-height: 1.25; letter-spacing: 0.01em; margin-top: 14px; }
+h1 em { font-style: normal; color: var(--teal); }
+.sub { font-size: 27px; font-weight: 500; color: var(--ink-soft); margin-top: 16px; line-height: 1.6; }
+
+footer {
+  position: absolute; left: 128px; right: 96px; bottom: 36px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 20px; color: var(--ink-soft); font-weight: 500;
+}
+footer .brand { display: flex; align-items: center; gap: 16px; }
+footer .brand img.svc { height: 22px; }
+footer .url { font-family: var(--f-en); font-weight: 600; letter-spacing: 0.02em; }
+footer .page { font-family: var(--f-en); font-weight: 700; color: var(--teal-dark); }
+
+.card { background: var(--white); border-radius: 20px; box-shadow: 0 6px 24px rgba(35,135,120,0.10); }
+
+/* ---- 1: overview ---- */
+.ov { display: grid; grid-template-columns: 1fr 1.25fr; gap: 56px; align-items: center; height: 100%; padding-bottom: 110px; }
+.ov h1 { font-size: 76px; }
+.ov .badges { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.ov .badges span { background: #fff; border: 2px solid var(--teal); color: var(--teal-dark); border-radius: 999px; padding: 6px 20px; font-size: 22px; font-weight: 700; }
+.map { padding: 30px; display: grid; gap: 18px; }
+.map .row { display: grid; grid-template-columns: 1fr 64px 1fr; align-items: center; }
+.node { border-radius: 16px; padding: 18px 20px; text-align: center; border: 3px solid var(--line); background: #fff; }
+.node b { display: block; font-size: 28px; font-weight: 900; }
+.node small { display: block; font-size: 18px; color: var(--muted); margin-top: 4px; }
+.node.admin { border-color: var(--teal-dark); }
+.node.web { border-color: var(--teal-light); background: var(--mint); }
+.node.db { border-color: var(--teal); background: linear-gradient(180deg, #fff, var(--mint)); }
+.arr { text-align: center; font-size: 34px; color: var(--teal); font-weight: 900; }
+.vline { display: grid; grid-template-columns: 1fr 64px 1fr; text-align: center; color: var(--teal); font-size: 20px; font-weight: 700; }
+
+/* ---- feature layout ---- */
+.feat { display: grid; grid-template-columns: 560px 1fr; gap: 64px; height: 100%; padding-bottom: 120px; align-items: center; }
+.feat h1 { font-size: 60px; }
+.points { margin-top: 34px; display: grid; gap: 16px; }
+.points li { list-style: none; display: flex; gap: 14px; font-size: 25px; font-weight: 500; line-height: 1.5; }
+.points li::before { content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--teal); margin-top: 13px; }
+
+/* 2: public site visual */
+.viz { padding: 34px 36px; display: grid; gap: 22px; }
+.viz .title { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: center; }
+.viz .title::before { content: ""; width: 8px; height: 26px; background: var(--teal); border-radius: 4px; }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.kpi { border: 2px solid #eef1f4; border-radius: 12px; padding: 12px 16px; }
+.kpi small { font-size: 16px; font-weight: 700; color: var(--teal-dark); }
+.kpi.out small { color: var(--red); }
+.kpi b { display: block; font-size: 30px; font-weight: 900; font-family: var(--f-en); }
+.kpi b span { font-size: 16px; font-family: var(--f); }
+.tags { display: flex; gap: 10px; flex-wrap: wrap; }
+.tags span { font-size: 18px; font-weight: 700; padding: 6px 16px; border-radius: 999px; background: var(--mint); color: var(--teal-dark); }
+
+/* 3: steps */
+.steps { display: grid; gap: 14px; }
+.step { display: grid; grid-template-columns: 64px 1fr; gap: 20px; align-items: center; padding: 18px 26px; }
+.step .n { width: 56px; height: 56px; border-radius: 50%; background: var(--teal); color: #fff; font-family: var(--f-en); font-weight: 700; font-size: 26px; display: grid; place-items: center; }
+.step b { font-size: 27px; font-weight: 900; display: block; }
+.step small { font-size: 19px; color: var(--ink-soft); display: block; margin-top: 2px; }
+.step.human { border: 3px dashed var(--teal); background: var(--mint); }
+
+/* 4: report */
+.flow { display: grid; grid-template-columns: 1fr 48px 1fr 48px 1fr; align-items: center; }
+.box { padding: 26px 22px; text-align: center; min-height: 320px; display: grid; align-content: center; gap: 12px; }
+.box .ic { font-family: var(--f-en); font-size: 18px; font-weight: 700; color: var(--teal); letter-spacing: 0.1em; }
+.box b { font-size: 27px; font-weight: 900; }
+.box small { font-size: 18px; color: var(--ink-soft); line-height: 1.55; }
+.box.xml { background: var(--ink); color: #fff; }
+.box.xml small { color: #c8d3dc; }
+.box.xml code { font-family: ui-monospace, Menlo, monospace; font-size: 17px; color: var(--teal-light); text-align: left; line-height: 1.5; white-space: pre; }
+.flow .a { text-align: center; font-size: 34px; color: var(--teal); font-weight: 900; }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 22px; }
+.chips span { background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 6px 14px; font-size: 18px; font-weight: 700; color: var(--ink-soft); }
+
+/* 5: AI */
+.chat { padding: 32px; display: grid; gap: 18px; }
+.bubble { border-radius: 16px; padding: 16px 22px; font-size: 22px; line-height: 1.55; max-width: 88%; }
+.bubble.me { background: var(--mint); justify-self: end; font-weight: 700; }
+.bubble.ai { background: #f4f6f8; }
+.cand { display: grid; gap: 10px; margin-top: 6px; }
+.cand div { background: #fff; border: 2px solid #e5e9ee; border-radius: 12px; padding: 10px 16px; font-size: 19px; display: flex; justify-content: space-between; gap: 12px; }
+.cand div.pick { border-color: var(--teal); }
+.cand i { font-style: normal; font-size: 15px; font-weight: 700; color: var(--teal-dark); background: var(--mint); border-radius: 999px; padding: 2px 12px; white-space: nowrap; align-self: center; }
+.ok { justify-self: end; background: var(--teal); color: #fff; font-weight: 700; font-size: 20px; border-radius: 10px; padding: 10px 24px; }
+
+/* 6: tech */
+.tech { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 48px; }
+.tg { padding: 28px 32px; display: grid; gap: 14px; align-content: start; }
+.tg h3 { font-size: 22px; color: var(--teal-dark); font-weight: 700; letter-spacing: 0.04em; }
+.tg ul { list-style: none; display: grid; gap: 10px; }
+.tg li { font-size: 26px; font-weight: 700; font-family: var(--f-en); }
+.tg li span { font-family: var(--f); font-size: 18px; font-weight: 500; color: var(--muted); margin-left: 8px; }
+.tech-head { display: flex; justify-content: space-between; align-items: end; gap: 40px; }
+.tech-head h1 { font-size: 58px; }
+.oss { font-size: 22px; font-weight: 700; color: #fff; background: var(--teal); border-radius: 14px; padding: 14px 22px; line-height: 1.5; white-space: nowrap; }
+
+/* RF: research fund */
+.rf { padding: 30px 32px; display: grid; gap: 18px; }
+.rf-row { display: grid; grid-template-columns: 210px 52px 1fr; align-items: center; }
+.receipt { background: #fffdf7; border: 2px solid #e8e1cf; border-radius: 6px; padding: 18px 18px 22px; font-family: ui-monospace, Menlo, monospace; font-size: 15px; line-height: 1.7; color: #3b3b3b; box-shadow: 0 3px 0 #efe9d9; }
+.receipt .shop { font-family: var(--f); font-weight: 900; font-size: 18px; text-align: center; border-bottom: 2px dashed #d8d0bb; padding-bottom: 6px; margin-bottom: 8px; }
+.receipt .tot { border-top: 2px dashed #d8d0bb; margin-top: 8px; padding-top: 6px; font-weight: 700; display: flex; justify-content: space-between; }
+.ai-arrow { text-align: center; color: var(--teal); font-weight: 900; font-size: 15px; line-height: 1.3; }
+.ai-arrow b { display: block; font-size: 34px; }
+.entry { border: 3px solid var(--teal); border-radius: 14px; padding: 16px 20px; display: grid; gap: 8px; }
+.entry .r { display: flex; justify-content: space-between; font-size: 20px; gap: 12px; }
+.entry .r span { color: var(--muted); font-size: 17px; }
+.entry .r b { font-weight: 700; }
+.status { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: center; text-align: center; }
+.status .st { border-radius: 999px; padding: 10px 0; font-weight: 700; font-size: 20px; background: #f1f4f6; color: var(--ink-soft); }
+.status .st.on { background: var(--teal); color: #fff; }
+.status .ar { color: var(--teal); font-weight: 900; font-size: 22px; }
+.status-cap { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; text-align: center; font-size: 16px; color: var(--ink-soft); margin-top: -8px; }
+</style>
+</head>
+<body>
+
+<!-- 1 overview -->
+<section class="slide" id="s1">
+  <div class="ov">
+    <div>
+      <div class="kicker"><span class="no">01</span>全体像</div>
+      <h1>みらいまる見え<br>政治資金の<br><em>しくみ</em></h1>
+      <p class="sub">政治資金と国会議員の調研費。<br>お金の流れを、だれでも見られる形に。</p>
+      <div class="badges"><span>オープンソース</span><span>Next.js</span><span>Supabase</span></div>
+    </div>
+    <div class="card map">
+      <div class="row">
+        <div class="node"><b>会計データ・領収書</b><small>CSV / 画像・PDF</small></div>
+        <div class="arr">→</div>
+        <div class="node admin"><b>管理画面</b><small>取りこみ・AI読み取り・確認</small></div>
+      </div>
+      <div class="vline"><span></span><span></span><span>↓ 保存</span></div>
+      <div class="row">
+        <div class="node" style="border-style:dashed"><b>報告書XML</b><small>国の作成ソフト形式</small></div>
+        <div class="arr">←</div>
+        <div class="node db"><b>データベース</b><small>Supabase / PostgreSQL</small></div>
+      </div>
+      <div class="vline"><span></span><span></span><span>↓ 集計して表示</span></div>
+      <div class="row">
+        <div class="node"><b>市民</b><small>スマホ・PCで閲覧</small></div>
+        <div class="arr">←</div>
+        <div class="node web"><b>公開サイト</b><small>団体・議員ごとにグラフ化</small></div>
+      </div>
+    </div>
+  </div>
+  <footer><div class="brand"><img class="svc" src="service-logo-pc.svg" alt=""></div><span class="url">github.com/team-mirai/marumie</span><span class="page">1 / 7</span></footer>
+</section>
+
+<!-- 2 public site -->
+<section class="slide" id="s2">
+  <div class="feat">
+    <div>
+      <div class="kicker"><span class="no">02</span>公開サイト</div>
+      <h1>お金の流れを<br><em>ひと目で</em>わかる形に</h1>
+      <ul class="points">
+        <li>収入→支出の流れを表すサンキー図</li>
+        <li>月ごとの収支の推移グラフ</li>
+        <li>財産と借入をまとめた貸借対照表</li>
+        <li>全取引の一覧とCSVダウンロード</li>
+      </ul>
+    </div>
+    <div class="card viz">
+      <div class="title">収支の流れ</div>
+      <div class="kpis">
+        <div class="kpi"><small>収入総額</small><b>1,250<span>万円</span></b></div>
+        <div class="kpi out"><small>支出総額</small><b>980<span>万円</span></b></div>
+        <div class="kpi"><small>収支</small><b>270<span>万円</span></b></div>
+      </div>
+      <svg viewBox="0 0 640 300" width="100%" height="300" aria-hidden="true">
+        <g fill="#2aa693">
+          <rect x="20" y="20" width="22" height="150" rx="3"/>
+          <rect x="20" y="182" width="22" height="50" rx="3"/>
+          <rect x="20" y="244" width="22" height="36" rx="3"/>
+        </g>
+        <rect x="309" y="20" width="22" height="260" rx="3" fill="#4b5563"/>
+        <g fill="#dc2626">
+          <rect x="598" y="20" width="22" height="120" rx="3"/>
+          <rect x="598" y="152" width="22" height="70" rx="3"/>
+          <rect x="598" y="234" width="22" height="46" rx="3"/>
+        </g>
+        <g fill="#2aa693" opacity="0.18">
+          <path d="M42 20 C175 20 175 20 309 20 L309 170 C175 170 175 170 42 170 Z"/>
+          <path d="M42 182 C175 182 175 170 309 170 L309 220 C175 220 175 232 42 232 Z"/>
+          <path d="M42 244 C175 244 175 220 309 220 L309 256 C175 256 175 280 42 280 Z"/>
+        </g>
+        <g fill="#dc2626" opacity="0.14">
+          <path d="M331 20 C465 20 465 20 598 20 L598 140 C465 140 465 140 331 140 Z"/>
+          <path d="M331 140 C465 140 465 152 598 152 L598 222 C465 222 465 210 331 210 Z"/>
+          <path d="M331 210 C465 210 465 234 598 234 L598 280 C465 280 465 256 331 256 Z"/>
+        </g>
+        <g font-family="Noto Sans JP, sans-serif" font-size="16" font-weight="700" fill="#1f2937">
+          <text x="52" y="100">寄附</text><text x="52" y="212">事業収入</text><text x="52" y="268">その他</text>
+          <text x="588" y="85" text-anchor="end">政治活動費</text><text x="588" y="192" text-anchor="end">経常経費</text><text x="588" y="262" text-anchor="end">繰越</text>
+        </g>
+      </svg>
+      <div class="tags"><span>サンキー図</span><span>月別グラフ</span><span>貸借対照表</span><span>取引一覧</span></div>
+    </div>
+  </div>
+  <footer><div class="brand"><img class="svc" src="service-logo-pc.svg" alt=""></div><span class="url">※数値はイメージです</span><span class="page">2 / 7</span></footer>
+</section>
+
+<!-- 3 csv import -->
+<section class="slide" id="s3">
+  <div class="feat">
+    <div>
+      <div class="kicker"><span class="no">03</span>データ取りこみ</div>
+      <h1>会計ソフトの<br>CSVを<em>そのまま</em><br>アップロード</h1>
+      <ul class="points">
+        <li>Shift_JISの文字化けも自動で変換</li>
+        <li>保存する前に、人の目で内容を確認</li>
+        <li>保存と同時に公開サイトへ反映</li>
+      </ul>
+    </div>
+    <div class="steps">
+      <div class="card step"><div class="n">1</div><div><b>CSVを読みこむ</b><small>文字コードを変換して1行ずつ読む</small></div></div>
+      <div class="card step"><div class="n">2</div><div><b>取引データに変換</b><small>勘定科目から収入・支出を判定</small></div></div>
+      <div class="card step"><div class="n">3</div><div><b>自動チェック</b><small>空の金額や登録済みの取引を見つける</small></div></div>
+      <div class="card step human"><div class="n">4</div><div><b>プレビューで確認</b><small>問題ない行だけを選んで保存</small></div></div>
+      <div class="card step"><div class="n">5</div><div><b>公開サイトを更新</b><small>キャッシュを入れかえて最新の数字に</small></div></div>
+    </div>
+  </div>
+  <footer><div class="brand"><img class="svc" src="service-logo-pc.svg" alt=""></div><span class="url">github.com/team-mirai/marumie</span><span class="page">3 / 7</span></footer>
+</section>
+
+<!-- 4 report -->
+<section class="slide" id="s4">
+  <div class="kicker"><span class="no">04</span>報告書作成サポート</div>
+  <h1 style="font-size:60px">取引データから<br><em>政治資金収支報告書</em>のXMLを生成</h1>
+  <p class="sub">毎年提出する報告書の作成を、取りこんだ取引データからそのまま進められます。</p>
+  <div class="flow" style="margin-top:40px">
+    <div class="card box"><div class="ic">STEP 1</div><b>取引データ</b><small>会計ソフトから<br>取りこんだ1件1件の<br>お金の出入り</small></div>
+    <div class="a">→</div>
+    <div class="card box"><div class="ic">STEP 2</div><b>取引先・寄附者を紐付け</b><small>報告書に必要な<br>名前・住所を整理<br>よく使う取引先を提案</small></div>
+    <div class="a">→</div>
+    <div class="box xml card"><div class="ic">STEP 3</div><b>報告書XML</b><code>&lt;SYUUSHI07_07&gt; 寄附の明細
+&lt;SYUUSHI07_14&gt; 経常経費
+&lt;SYUUSHI07_15&gt; 政治活動費
+…</code><small>国の収支報告書作成ソフト<br>で読みこめる形式</small></div>
+  </div>
+  <div class="chips"><span>個人からの寄附</span><span>事業収入</span><span>借入金</span><span>交付金</span><span>経常経費</span><span>政治活動費</span></div>
+  <footer><div class="brand"><img class="svc" src="service-logo-pc.svg" alt=""></div><span class="url">管理画面で開発中の機能です</span><span class="page">4 / 7</span></footer>
+</section>
+
+
+<!-- RF research fund -->
+<section class="slide" id="s5">
+  <div class="feat">
+    <div>
+      <div class="kicker"><span class="no">05</span>調研費の公開</div>
+      <h1>領収書を<br><em>AIが読んで</em><br>帳簿にする</h1>
+      <ul class="points">
+        <li>国会議員の調研費の使い道を、<br>領収書つきで公開</li>
+        <li>写真やPDFからAI（Claude）が<br>日付・支払先・金額を読み取り</li>
+        <li>人が確認してから公開。<br>支払先の住所は公開しない</li>
+      </ul>
+    </div>
+    <div class="card rf">
+      <div class="rf-row">
+        <div class="receipt">
+          <div class="shop">みらい書店</div>
+          <div>2026/04/12</div>
+          <div>書籍 3点</div>
+          <div class="tot"><span>合計</span><span>¥4,620</span></div>
+        </div>
+        <div class="ai-arrow"><b>→</b>AI</div>
+        <div class="entry">
+          <div class="r"><span>日付</span><b>2026年4月12日</b></div>
+          <div class="r"><span>支払先</span><b>みらい書店</b></div>
+          <div class="r"><span>項目</span><b>書籍購入費</b></div>
+          <div class="r"><span>金額</span><b>4,620円</b></div>
+        </div>
+      </div>
+      <div class="status">
+        <div class="st">下書き</div><div class="ar">→</div><div class="st">確認済み</div><div class="ar">→</div><div class="st on">公開済み</div>
+      </div>
+      <div class="status-cap"><span>AIが作成</span><span></span><span>人がチェック</span><span></span><span>公開サイトへ</span></div>
+    </div>
+  </div>
+  <footer><div class="brand"><img class="svc" src="service-logo-pc.svg" alt=""></div><span class="url">※画面はイメージです</span><span class="page">5 / 7</span></footer>
+</section>
+
+<!-- 6 AI -->
+<section class="slide" id="s6">
+  <div class="feat">
+    <div>
+      <div class="kicker"><span class="no">06</span>AIアシスト</div>
+      <h1>取引先の<br>住所さがしを<br><em>AI</em>がお手伝い</h1>
+      <ul class="points">
+        <li>報告書には支出先の住所が必要</li>
+        <li>会社名からAI（Claude）が<br>Web検索して候補を提示</li>
+        <li>候補から選ぶのは人間。AIまかせにしない</li>
+      </ul>
+    </div>
+    <div class="card chat">
+      <div class="bubble me">「株式会社みらい印刷」の住所は？</div>
+      <div class="bubble ai">Webで見つかった候補です。
+        <div class="cand">
+          <div class="pick"><span>〒100-0001 東京都千代田区…</span><i>確度 高</i></div>
+          <div><span>〒530-0001 大阪府大阪市北区…</span><i>確度 中</i></div>
+        </div>
+      </div>
+      <div class="ok">この住所で登録する</div>
+    </div>
+  </div>
+  <footer><div class="brand"><img class="svc" src="service-logo-pc.svg" alt=""></div><span class="url">※画面はイメージです</span><span class="page">6 / 7</span></footer>
+</section>
+
+<!-- 6 tech -->
+<section class="slide" id="s7">
+  <div class="tech-head">
+    <div>
+      <div class="kicker"><span class="no">07</span>技術スタック</div>
+      <h1>中身もすべて<em>まる見え</em></h1>
+    </div>
+    <div class="oss">ソースコードは GitHub で公開中<br>AGPL-3.0 ライセンス</div>
+  </div>
+  <div class="tech">
+    <div class="card tg"><h3>アプリ</h3><ul><li>Next.js 16<span>App Router</span></li><li>React 19</li><li>TypeScript</li><li>Tailwind CSS v4</li></ul></div>
+    <div class="card tg"><h3>データ</h3><ul><li>Supabase<span>DB・認証・Storage</span></li><li>Prisma<span>ORM</span></li><li>Vercel<span>ホスティング</span></li></ul></div>
+    <div class="card tg"><h3>可視化・帳票・AI</h3><ul><li>Nivo<span>サンキー図</span></li><li>ApexCharts<span>月別グラフ</span></li><li>xmlbuilder2<span>報告書XML</span></li><li>Vercel AI SDK<span>Claude（領収書・住所）</span></li></ul></div>
+    <div class="card tg" style="grid-column: span 2"><h3>設計</h3><ul><li style="font-family:var(--f)">レイヤードアーキテクチャ ＋ Bounded Context</li><li style="font-family:var(--f);font-size:19px;font-weight:500;color:var(--ink-soft)">表示・処理の段取り・政治資金のルール・DBアクセスを分けて、変更しやすく</li></ul></div>
+    <div class="card tg"><h3>品質チェック</h3><ul><li>Jest / Playwright</li><li>Biome / knip</li><li>dependency-cruiser</li></ul></div>
+  </div>
+  <footer><div class="brand"><img class="svc" src="service-logo-pc.svg" alt=""></div><span class="url">github.com/team-mirai/marumie</span><span class="page">7 / 7</span></footer>
+</section>
+
+<script>
+  const n = (location.hash || "#1").slice(1);
+  document.getElementById("s" + n).classList.add("on");
+</script>
+</body>
+</html>

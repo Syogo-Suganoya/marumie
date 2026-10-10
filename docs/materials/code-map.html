@@ -398,6 +398,9 @@ dialog.viewer::backdrop { background: rgba(20, 40, 36, .55); }
   .tn .ar span::before { content: "↓ "; }
   .scr { width: 100% !important; }
 }
+
+.topbar .unofficial { font-size: 12px; font-weight: 700; color: #8a5a00; background: #fdf3dc; border: 1px solid #f0dcb4; border-radius: 999px; padding: 3px 12px; white-space: nowrap; }
+@media (max-width: 720px) { .topbar .unofficial { font-size: 11px; padding: 2px 8px; } .topbar .unofficial .long { display: none; } }
 </style>
 </head>
 <body>
@@ -412,7 +415,7 @@ dialog.viewer::backdrop { background: rgba(20, 40, 36, .55); }
 </svg>
 
 
-<header class="topbar"><a class="brand" href="#top"><img src="assets/service-logo.svg" alt="みらいまる見え政治資金"></a><span class="doc">コード逆引き</span><a class="other" href="marumie-guide-for-students.html">しくみ図鑑へ</a></header>
+<header class="topbar"><a class="brand" href="#top"><img src="assets/service-logo.svg" alt="みらいまる見え政治資金"></a><span class="doc">コード逆引き</span><span class="unofficial">非公式<span class="long">の解説資料です</span></span><a class="other" href="marumie-guide-for-students.html">しくみ図鑑へ</a></header>
 <div class="shell" id="top">
 <aside class="side"><nav class="toc" aria-label="目次"><ol><li><a href="#system"><span class="no">01</span>システム構成</a></li><li><a href="#contexts"><span class="no">02</span>コンテキストとレイヤー</a></li><li><a href="#requests"><span class="no">03</span>リクエストの流れ</a></li><li><a href="#data"><span class="no">04</span>データモデル</a></li><li><a href="#screens"><span class="no">05</span>画面遷移図</a></li><li><a href="#lookup"><span class="no">06</span>機能の逆引き</a></li><li><a href="#crosscut"><span class="no">07</span>横断的な仕組み</a></li></ol></nav></aside>
 <div class="wrap">

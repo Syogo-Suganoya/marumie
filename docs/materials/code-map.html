@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>marumie コード逆引き</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Montserrat:wght@600;700&display=swap">
+<style>
+/* みらい議会の解説資料と同じトンマナ。ミントのグラデーション背景・白い角丸カード・緑の番号 */
+:root {
+  color-scheme: light;
+  --teal: #2aa693; --teal-dark: #0f8472; --teal-light: #30bca7; --mint: #e2f6f3; --teal-wash: #e2f6f3;
+  --ink: #1f2937; --ink-2: #4b5563; --muted: #85868e; --line: #cfe9e3; --rule: #e3ece9; --fill: #f3f4f6;
+  --violet: #6a4fb3; --violet-wash: #efeafb; --amber: #b06f00; --amber-wash: #fcefd6; --ochre: #b06f00; --ochre-wash: #fcefd6;
+  --blue: #2f6db5; --blue-wash: #e6eef9; --indigo: #2f6db5; --indigo-wash: #e6eef9;
+  --red: #d64545; --red-wash: #fdf1f1; --slate-wash: #f3f4f6; --paper: #ffffff;
+  --f-body: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+  --f-en: "Montserrat", "Noto Sans JP", sans-serif;
+  --f-mono: ui-monospace, Menlo, monospace;
+  --shadow: 0 6px 24px rgba(15, 132, 114, 0.10);
+}
+* { box-sizing: border-box; }
+html { background: linear-gradient(135deg, #f7f4ee 0%, #eef6f0 60%, #e3f5f2 100%) fixed; }
+body { margin: 0; color: var(--ink); font-family: var(--f-body); font-size: 16.5px; line-height: 1.9; padding-bottom: 96px; position: relative; background: transparent; }
+body::before { content: ""; position: fixed; left: 0; top: 0; bottom: 0; width: 14px; background: var(--teal); z-index: 3; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 40px 24px; }
+.wrap.guide { max-width: 920px; }
+h1, h2, h3, h4, h5 { margin: 0; line-height: 1.35; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--teal-dark); }
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+code { font-family: var(--f-mono); font-size: 0.86em; background: var(--mint); color: var(--teal-dark); padding: 1px 6px; border-radius: 6px; overflow-wrap: anywhere; }
+b { color: var(--teal-dark); }
+
+/* 表紙 */
+.cover { position: relative; padding-block: 64px 36px; display: grid; gap: 18px; }
+.cover h1 { font-size: clamp(34px, 6.4vw, 60px); font-weight: 900; letter-spacing: 0.01em; }
+.cover h1 em { font-style: normal; color: var(--teal); }
+.cover .lead { font-size: 18px; font-weight: 500; color: var(--ink-2); max-width: 36em; }
+.cover .basis { font-size: 13px; color: var(--muted); }
+.cover-ill { position: absolute; right: 0; bottom: 64px; height: 230px; width: auto; }
+.cover > :not(.cover-ill) { max-width: calc(100% - 240px); }
+
+/* 目次 */
+nav.toc ol { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+nav.toc a { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); font-size: 14.5px; font-weight: 700; background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 4px 16px 4px 6px; }
+nav.toc a:hover { border-color: var(--teal); }
+nav.toc .no { font-family: var(--f-en); font-size: 13px; color: #fff; background: var(--teal); border-radius: 999px; padding: 0 9px; }
+
+/* 章 */
+section.part { padding-top: 64px; display: grid; gap: 20px; scroll-margin-top: 16px; }
+section.part > * { min-width: 0; }
+.part-head { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.part-head .no { font-family: var(--f-en); font-size: 20px; font-weight: 700; color: #fff; background: var(--teal); border-radius: 8px; padding: 2px 14px; }
+.part-head .cib { width: 48px; height: 48px; border-radius: 14px; background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; color: var(--teal-dark); }
+.part-head .cib svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.part-head h2 { font-size: clamp(26px, 4.4vw, 38px); font-weight: 900; }
+.sub-h { font-size: 20px; font-weight: 900; margin-top: 8px; }
+
+/* 図 */
+figure { margin: 0; }
+figure.dwg { background: #fff; border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; }
+figure.dwg .scroll { overflow-x: auto; padding: 22px; }
+figure.dwg svg { display: block; width: 100%; height: auto; }
+svg text { font-family: var(--f-body); fill: var(--ink); font-size: 15px; }
+svg .b { font-weight: 700; font-size: 16px; }
+svg .m { font-family: var(--f-mono); font-size: 12.5px; fill: var(--ink-2); }
+svg .mb { font-family: var(--f-mono); font-size: 14px; font-weight: 700; fill: var(--teal-dark); }
+svg .s { font-size: 13px; fill: var(--ink-2); }
+svg .blue { fill: var(--blue); }
+svg .box, svg .box2 { fill: #fff; stroke: var(--line); stroke-width: 2; rx: 12px; ry: 12px; }
+svg .box2 { stroke-width: 2.6; }
+svg path.box, svg path.box2 { rx: 0; }
+svg .box.fw, svg .box2.fw { fill: var(--mint); stroke: var(--teal); }
+svg .box.fa, svg .box2.fa { fill: var(--blue-wash); stroke: var(--blue); }
+svg .box.fo, svg .box2.fo { fill: var(--amber-wash); stroke: var(--amber); }
+svg .box.fv, svg .box2.fv { fill: var(--violet-wash); stroke: var(--violet); }
+svg .box.fd, svg .box2.fd { fill: #f7f8f8; stroke: #9aa4ae; }
+svg .thin { fill: none; stroke: var(--line); stroke-width: 1.5; }
+svg .soft { fill: none; stroke: var(--rule); stroke-width: 1.2; }
+svg .bd { fill: none; stroke: var(--line); stroke-width: 1.8; stroke-dasharray: 7 5; }
+svg rect.bd { rx: 16px; ry: 16px; }
+svg .hid { fill: none; stroke: #9aa4ae; stroke-width: 1.5; stroke-dasharray: 6 4; }
+svg rect.hid { rx: 12px; ry: 12px; }
+svg .hatch { fill: #f7f8f8; stroke: #9aa4ae; stroke-width: 1.5; stroke-dasharray: 6 4; rx: 12px; ry: 12px; }
+svg .w { fill: none; stroke: var(--teal-dark); stroke-width: 1.6; }
+svg .wb { fill: none; stroke: var(--blue); stroke-width: 1.8; }
+svg .wbd { fill: none; stroke: var(--blue); stroke-width: 1.8; stroke-dasharray: 6 4; }
+svg .ng { fill: none; stroke: #9aa4ae; stroke-width: 1.4; stroke-dasharray: 3 3; }
+svg .x { stroke: var(--red); stroke-width: 2.6; }
+
+/* 要点（アイコン＋一言） */
+ul.keys { list-style: none; margin: 0; padding: 18px 22px; background: #fbfdfc; border-top: 1px solid var(--rule); display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 20px; }
+ul.keys li, ul.xcards li { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; align-items: center; }
+.k-ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--teal); color: #fff; }
+.k-ic svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+ul.keys li:nth-child(4n+2) .k-ic, ul.xcards li:nth-child(4n+2) .k-ic { background: var(--amber); }
+ul.keys li:nth-child(4n+3) .k-ic, ul.xcards li:nth-child(4n+3) .k-ic { background: var(--violet); }
+ul.keys li:nth-child(4n+4) .k-ic, ul.xcards li:nth-child(4n+4) .k-ic { background: var(--blue); }
+.k-t { display: grid; gap: 0; min-width: 0; }
+.k-t b { font-size: 16px; line-height: 1.5; color: var(--ink); }
+.k-sub { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+ul.xcards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+ul.xcards li { background: #fff; border-radius: 18px; box-shadow: var(--shadow); padding: 16px 18px; }
+ul.xcards code { background: none; padding: 0; font-size: 12px; color: var(--muted); }
+
+/* 逆引き */
+.finder { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: rgba(240, 248, 245, 0.92); backdrop-filter: blur(6px); display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; padding: 12px 0; }
+.finder .q { display: flex; flex: 1 1 320px; min-width: 0; background: #fff; border: 2px solid var(--line); border-radius: 999px; overflow: hidden; }
+.finder .q span { padding: 8px 6px 8px 18px; font-size: 14px; font-weight: 700; color: var(--teal-dark); white-space: nowrap; }
+.finder .q input { flex: 1; min-width: 0; border: 0; font: inherit; font-size: 15px; padding: 8px 16px 8px 8px; background: transparent; color: var(--ink); }
+.finder .q input:focus { outline: none; }
+.finder .q:focus-within { border-color: var(--teal); }
+.seg { display: flex; gap: 6px; }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 5px 16px; background: #fff; color: var(--ink); border: 2px solid var(--line); border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+.count { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lk-group { display: grid; gap: 12px; margin-top: 26px; }
+.lk-h { font-size: 20px; font-weight: 900; }
+.fcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.fcard { background: #fff; border-radius: 20px; box-shadow: var(--shadow); display: grid; grid-template-rows: auto auto 1fr; min-width: 0; overflow: hidden; }
+.fcard .fh { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; padding: 18px 18px 12px; align-items: start; }
+.fcard .fh b { font-size: 17px; line-height: 1.45; display: block; color: var(--ink); }
+.fcard .fh .u { font-family: var(--f-mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; display: block; }
+.icw { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: var(--teal); }
+.icw .ic { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icw.c-research-fund { background: var(--amber); }
+.icw.c-auth, .icw.c-data-import, .icw.c-report { background: var(--blue); }
+.icw.c-shared { background: #8a94a0; }
+.fcard .fshot { display: block; margin: 0 18px; border-radius: 12px; overflow: hidden; border: 1px solid var(--rule); }
+.fcard .fshot img { display: block; width: 100%; height: 160px; object-fit: cover; object-position: top left; }
+.fcard .noshot { height: 0; }
+.fcard details { padding: 12px 18px 16px; align-self: end; }
+.fcard summary { cursor: pointer; font-size: 14px; color: var(--teal-dark); font-weight: 700; list-style: none; display: inline-flex; gap: 6px; align-items: center; background: var(--mint); border-radius: 999px; padding: 2px 14px; }
+.fcard summary::-webkit-details-marker { display: none; }
+.fcard summary::before { content: "＋"; }
+.fcard details[open] summary::before { content: "－"; }
+.fcard .lay { display: grid; gap: 10px; margin-top: 12px; }
+.fcard .lay h5 { font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.fcard .lay .l-p h5 { color: var(--blue); } .fcard .lay .l-a h5 { color: var(--teal-dark); } .fcard .lay .l-d h5 { color: var(--amber); }
+ul.pl { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.path { font: inherit; font-family: var(--f-mono); font-size: 12px; text-align: left; background: none; border: 0; padding: 0; color: var(--ink); cursor: copy; overflow-wrap: anywhere; }
+.path:hover { color: var(--teal-dark); text-decoration: underline; }
+.path.copied { background: var(--mint); color: var(--teal-dark); }
+.empty { background: #fff; border-radius: 16px; box-shadow: var(--shadow); padding: 24px; text-align: center; color: var(--muted); margin-top: 16px; }
+
+footer.colophon { margin-top: 56px; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; }
+
+@media (max-width: 760px) {
+  .wrap { padding-inline: 28px 16px; }
+  .cover-ill { display: none; } .cover > :not(.cover-ill) { max-width: none; }
+}
+
+/* ---- 固定ヘッダー・サイド目次 ---- */
+html { scroll-padding-top: 76px; }
+body { padding-top: 60px; }
+.topbar { position: fixed; top: 0; left: 14px; right: 0; height: 60px; z-index: 10; display: flex; align-items: center; gap: 18px; padding: 0 24px; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--rule); }
+.topbar .brand { display: block; line-height: 0; }
+.topbar .brand img { height: 22px; width: auto; }
+.topbar .doc { font-size: 14px; font-weight: 700; color: var(--ink-2); border-left: 2px solid var(--line); padding-left: 18px; white-space: nowrap; }
+.topbar .other { margin-left: auto; font-size: 13.5px; font-weight: 700; text-decoration: none; color: var(--teal-dark); background: var(--mint); border-radius: 999px; padding: 4px 16px; white-space: nowrap; }
+.topbar .other:hover { background: #d2efe9; }
+.shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); max-width: 1420px; margin: 0 auto; padding-left: 14px; }
+.side { position: sticky; top: 60px; align-self: start; max-height: calc(100vh - 60px); overflow-y: auto; padding: 32px 8px 32px 20px; }
+.side nav.toc ol { flex-direction: column; flex-wrap: nowrap; gap: 2px; margin: 0; }
+.side nav.toc a { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; border-radius: 12px; padding: 7px 10px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.side nav.toc a:hover { background: rgba(255, 255, 255, 0.7); color: var(--ink); }
+.side nav.toc a.on { background: #fff; color: var(--teal-dark); box-shadow: var(--shadow); }
+.side nav.toc .no { flex: none; min-width: 30px; text-align: center; }
+.side nav.toc a:not(.on) .no { background: #fff; color: var(--teal-dark); }
+section.part { scroll-margin-top: 76px; }
+.finder { top: 60px; }
+@media (max-width: 1000px) {
+  .shell { display: block; padding-left: 0; }
+  .side { position: static; max-height: none; overflow-x: auto; padding: 14px 16px 0 28px; }
+  .side nav.toc ol { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .side nav.toc a { background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 3px 14px 3px 5px; }
+}
+@media (max-width: 560px) { .topbar .doc { display: none; } .topbar { gap: 10px; padding: 0 14px; } .topbar .brand img { height: 16px; } }
+
+/* ---- システム構成（HTML） ---- */
+.sys { display: grid; grid-template-columns: minmax(196px, 1fr) 72px minmax(200px, 1.1fr) 104px minmax(200px, 1.1fr); grid-template-rows: auto repeat(3, minmax(0, auto)); row-gap: 34px; padding: 24px 22px; }
+.sys .sc { border-radius: 18px; padding: 12px; display: grid; grid-template-rows: subgrid; row-gap: 34px; min-width: 0; }
+.sys .sc-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 900; line-height: 1.3; }
+.sys svg { min-width: 0 !important; display: block; }
+.sys .sc-h svg { width: 20px !important; height: 20px !important; flex: none; }
+.sys .c-users { grid-column: 1; grid-row: 1 / 5; background: #f7f8f8; border: 1.5px dashed #c5ccd3; }
+.sys .c-vercel { grid-column: 3; grid-row: 1 / 5; background: #f2faf8; border: 1.5px solid var(--line); }
+.sys .c-data { grid-column: 5; grid-row: 1 / 4; background: #f4fbf7; border: 1.5px solid #bfe6cf; }
+.sys .c-ai { grid-column: 5; grid-row: 4; background: var(--violet-wash); border: 1.5px solid #d6cbf1; display: grid; grid-template-rows: none; row-gap: 8px; align-content: center; }
+.sys .r2 { grid-row: 2; } .sys .r3 { grid-row: 3; } .sys .r34 { grid-row: 3 / 5; } .sys .r23 { grid-row: 2 / 4; } .sys .r4 { grid-row: 4; }
+.sys .nd { background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 10px; align-items: center; align-content: center; position: relative; min-width: 0; }
+.sys .nd > .lg { grid-row: 1 / span 2; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #fff; border: 1.5px solid var(--rule); }
+.sys .nd > .lg svg { width: 20px !important; height: 20px !important; }
+.sys .nd b { font-size: 15px; line-height: 1.4; color: var(--ink); }
+.sys .nd small { font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+.sys .nd.web { border-color: var(--teal); }
+.sys .nd.adm { border-color: var(--blue); }
+.sys .nd.web > .lg, .sys .nd.adm > .lg { border-color: transparent; }
+.sys .rt { grid-column: 1 / -1; list-style: none; margin: 8px 0 0; padding: 8px 0 0; border-top: 1px dashed var(--line); display: grid; gap: 3px; font-size: 12.5px; line-height: 1.45; }
+.sys .rt li { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.sys .rt code { font-size: 11.5px; padding: 0 5px; }
+.sys .stack { display: grid; gap: 10px; align-content: center; }
+.sys .sig { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--blue); background: #fff; border: 1.5px dashed var(--blue); border-radius: 999px; padding: 0 10px; line-height: 22px; }
+.sys .ln { grid-column: 2; align-self: center; position: relative; display: grid; place-items: center; min-height: 34px; }
+.sys .ln.c4 { grid-column: 4; }
+.sys .ln::before { content: ""; position: absolute; left: 2px; right: 2px; top: 50%; border-top: 2px solid var(--teal-dark); }
+.sys .ln span { position: relative; background: #fff; color: var(--teal-dark); font-size: 12.5px; font-weight: 700; line-height: 1.35; padding: 1px 5px; text-align: center; border-radius: 6px; }
+.sys .ln i { position: absolute; top: 50%; width: 0; height: 0; border: 6px solid transparent; transform: translateY(-50%); }
+.sys .ln i.r { right: -2px; border-left: 9px solid var(--teal-dark); border-right: 0; }
+.sys .ln i.l { left: -2px; border-right: 9px solid var(--teal-dark); border-left: 0; }
+.sys .ln.ai::before { border-top-color: var(--violet); } .sys .ln.ai span { color: var(--violet); } .sys .ln.ai i.r { border-left-color: var(--violet); }
+@media (max-width: 760px) {
+  .sys { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
+  .sys .sc { display: flex; flex-direction: column; gap: 10px; }
+  .sys .ln { min-height: 0; justify-items: start; }
+  .sys .ln::before, .sys .ln i { display: none; }
+  .sys .ln span { background: none; padding: 0 0 0 14px; }
+  .sys .ln span::before { content: "↓ "; }
+  .sys .sig { position: static; transform: none; grid-column: 1 / -1; grid-row: 3; justify-self: start; margin-top: 8px; }
+}
+
+/* ---- パーツ分け ---- */
+.tree .lay.k1 { --lc: var(--teal); } .tree .lay.k2 { --lc: var(--blue); } .tree .lay.k3 { --lc: var(--amber); } .tree .lay.k4 { --lc: #9aa4ae; }
+.ctree > ul > li + li { margin-top: 14px; }
+.ctree .row .d { min-width: 150px; }
+figure.dwg.fc1 svg { max-width: 860px; margin: 0 auto; }
+.sub-h small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 8px; }
+.sub-h small code { font-size: 12px; }
+.comps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+.comp { background: #fff; border-radius: 20px; box-shadow: var(--shadow); padding: 18px 20px; border-top: 5px solid var(--line); display: grid; gap: 12px; align-content: start; }
+.comp.c-web { border-top-color: var(--teal); } .comp.c-adm { border-top-color: var(--blue); } .comp.c-data { border-top-color: #3ecf8e; } .comp.c-ai { border-top-color: var(--violet); }
+.comp header { display: flex; gap: 12px; align-items: center; }
+.clg { width: 40px; height: 40px; border-radius: 12px; border: 1.5px solid var(--rule); display: grid; place-items: center; flex: none; }
+.clg svg { width: 22px; height: 22px; }
+.comp header b { display: block; font-size: 17px; line-height: 1.3; }
+.comp header small { font-size: 13px; color: var(--ink-2); }
+.comp ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.comp li { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 12px; font-size: 14px; line-height: 1.55; align-items: baseline; }
+.comp li code { justify-self: start; font-size: 12px; }
+.ctxg { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.ctxc { background: #fff; border-radius: 18px; box-shadow: var(--shadow); padding: 16px 18px; border-left: 6px solid var(--line); display: grid; gap: 8px; align-content: start; }
+.ctxc > code { background: none; padding: 0; font-size: 15px; font-weight: 700; color: var(--ink); }
+.ctxc ul { margin: 0; padding-left: 1.1em; font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+.k-web.ctxc { border-left-color: var(--teal); } .k-adm.ctxc { border-left-color: var(--blue); } .k-rf.ctxc { border-left-color: var(--amber); } .k-sh.ctxc { border-left-color: #9aa4ae; }
+.tree { background: #fff; border-radius: 20px; box-shadow: var(--shadow); padding: 20px 24px; font-family: var(--f-mono); font-size: 14px; line-height: 1.5; overflow-x: auto; }
+.tree ul { list-style: none; margin: 0; padding-left: 20px; }
+.tree > ul { padding-left: 0; }
+.tree li { position: relative; padding: 3px 0 3px 20px; }
+.tree > ul > li { padding-left: 0; }
+.tree ul ul li::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-left: 1.5px solid #b9ddd5; }
+.tree ul ul li:last-child::before { bottom: auto; height: 15px; }
+.tree ul ul li::after { content: ""; position: absolute; left: 0; top: 15px; width: 14px; border-top: 1.5px solid #b9ddd5; }
+.tree .row { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0 12px; }
+.tree .d { font-weight: 700; color: var(--ink); white-space: nowrap; }
+.tree > ul > li > .row .d { color: var(--teal-dark); }
+.tree .c { font-family: var(--f-body); font-size: 13.5px; color: var(--ink-2); }
+.tree .lay { width: 10px; height: 10px; border-radius: 3px; margin-right: -4px; }
+.l1 { --lc: var(--teal); } .l2 { --lc: var(--amber); } .l3 { --lc: var(--violet); } .l4 { --lc: var(--blue); }
+.tree .lay { background: var(--lc); }
+.dep { background: #fff; border-radius: 20px; box-shadow: var(--shadow); padding: 20px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.dep .chip { font-family: var(--f-mono); font-size: 14px; font-weight: 700; padding: 6px 14px; border-radius: 12px; border: 2px solid var(--lc, #9aa4ae); background: #fff; }
+.dep i { font-style: normal; font-size: 20px; font-weight: 700; color: var(--teal-dark); }
+ul.rules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+ul.rules li { background: #fff; border-radius: 16px; box-shadow: var(--shadow); padding: 14px 18px; font-size: 14px; color: var(--ink-2); line-height: 1.6; display: grid; gap: 2px; }
+ul.rules b { color: var(--ink); font-size: 15px; }
+.ents { display: grid; gap: 12px; }
+.ent { background: #fff; border-radius: 18px; box-shadow: var(--shadow); display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 0 24px; padding: 16px 20px; border-left: 6px solid var(--teal); }
+.ents.k-rf .ent { border-left-color: var(--amber); }
+.ent .eh { display: grid; gap: 2px; align-content: start; }
+.ent .en { background: none; padding: 0; font-size: 15px; font-weight: 700; color: var(--ink); }
+.ent .eh b { font-size: 14px; color: var(--teal-dark); }
+.ents.k-rf .ent .eh b { color: var(--amber); }
+.ent .eh span { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
+.ent .eb { display: grid; gap: 8px; align-content: start; }
+.ent .cols { display: flex; flex-wrap: wrap; gap: 6px; }
+.ent .cols code { background: var(--fill); color: var(--ink); font-size: 12.5px; }
+.ent .rels { list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--teal-dark); font-weight: 700; display: grid; gap: 2px; }
+.lanes { display: grid; gap: 20px; }
+.lane { background: #fff; border-radius: 20px; box-shadow: var(--shadow); padding: 18px 20px 20px; border-top: 6px solid var(--blue); display: grid; gap: 18px; }
+.lane.ln-gray { border-top-color: #9aa4ae; } .lane.ln-amber { border-top-color: var(--amber); }
+.lane > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.lane > header b { font-size: 18px; }
+.lane > header span { font-size: 13.5px; color: var(--ink-2); }
+.flow { display: flex; flex-wrap: nowrap; align-items: flex-start; gap: 16px 0; padding: 14px 0 10px; border-top: 1px dashed var(--rule); overflow-x: auto; scrollbar-width: thin; }
+.lane.ln-teal { border-top-color: var(--teal); }
+.lane > header + .flow { border-top: 0; padding-top: 0; }
+.step { display: flex; align-items: flex-start; }
+.step + .step:not(:has(.ar)) { margin-left: 16px; }
+.ar { width: 92px; flex: none; align-self: center; margin-top: -40px; position: relative; display: grid; place-items: center; padding-bottom: 14px; }
+.ar::before { content: ""; position: absolute; left: 8px; right: 8px; bottom: 6px; border-top: 2px solid var(--teal-dark); }
+.ar::after { content: ""; position: absolute; right: 4px; bottom: 1px; border: 5.5px solid transparent; border-left: 9px solid var(--teal-dark); border-right: 0; }
+.ar span { font-size: 12.5px; font-weight: 700; color: var(--teal-dark); text-align: center; line-height: 1.35; }
+.scr { margin: 0; width: 380px; flex: none; display: grid; gap: 6px; }
+.scr .si { display: block; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--rule); line-height: 0; background: #f7f8f8; }
+.scr .si:hover { border-color: var(--teal); }
+.scr .si img { width: 100%; height: 250px; object-fit: cover; object-position: top left; }
+.scr .si.none { height: 250px; display: grid; place-items: center; font-size: 13px; color: var(--muted); line-height: 1; border-style: dashed; }
+.scr figcaption { display: grid; gap: 0; }
+.scr figcaption b { font-size: 14.5px; line-height: 1.4; }
+.scr figcaption code { background: none; padding: 0; font-size: 11.5px; color: var(--muted); }
+@media (max-width: 760px) {
+  .step { flex-direction: column; align-items: stretch; width: 100%; }
+  .scr { width: 100%; }
+  .ar { width: auto; margin: 0; padding: 0 0 6px; place-items: start; }
+  .ar::before, .ar::after { display: none; }
+  .ar span::before { content: "↓ "; }
+  .step + .step:not(:has(.ar)) { margin-left: 0; }
+  .ent { grid-template-columns: 1fr; gap: 10px; }
+  .comp li { grid-template-columns: 1fr; gap: 0; }
+}
+/* 機能の逆引き */
+.lk-group { gap: 16px; }
+.feat .fl { display: grid; gap: 14px; align-content: start; min-width: 0; position: sticky; top: 76px; }
+.feat .fl .fshot { position: static; }
+.feat .fb { grid-template-columns: 400px minmax(0, 1fr) !important; }
+@media (max-width: 900px) { .feat .fb { grid-template-columns: 1fr !important; } .feat .fl { position: static; } }
+.feat { background: #fff; border-radius: 20px; box-shadow: var(--shadow); padding: 20px 22px; display: grid; gap: 16px; }
+.feat .fh { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 14px; align-items: start; padding: 0; }
+.feat .fh b { font-size: 18px; line-height: 1.45; display: block; }
+.feat .fh .u { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); display: block; overflow-wrap: anywhere; }
+.feat .fh .fd { font-size: 14px; color: var(--ink-2); display: block; margin-top: 2px; }
+.feat .fb { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start; }
+.feat .fb.noimg { grid-template-columns: minmax(0, 1fr); }
+.feat .fshot { display: block; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--rule); line-height: 0; position: sticky; top: 76px; }
+.feat .fshot img { width: 100%; height: auto; max-height: 420px; object-fit: cover; object-position: top left; }
+ol.chain { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.stg { position: relative; padding: 0 0 14px 24px; }
+.stg::before { content: ""; position: absolute; left: 6px; top: 8px; bottom: 0; border-left: 2px solid var(--line); }
+.stg:last-child { padding-bottom: 0; }
+.stg:last-child::before { display: none; }
+.stg::after { content: ""; position: absolute; left: 0; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--sc, #9aa4ae); box-shadow: 0 0 0 3px #fff; }
+.stg:not(:last-child) > ul::after { content: "↓ 呼び出す"; display: block; font-size: 11.5px; font-weight: 700; color: var(--muted); margin-top: 6px; }
+.stg.l-v { --sc: var(--teal); } .stg.l-c { --sc: var(--blue); } .stg.l-m { --sc: var(--amber); }
+.stg h5 { color: var(--ink) !important; font-size: 14px !important; }
+.stg .pc { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.stg .tag { flex: none; font-size: 11px; font-weight: 700; line-height: 1.6; padding: 0 7px; border-radius: 999px; background: var(--fill); color: var(--ink-2); }
+.stg .t-処理 { background: var(--amber-wash); color: var(--amber); } .stg .t-ルール { background: var(--violet-wash); color: var(--violet); } .stg .t-データ { background: var(--blue-wash); color: var(--blue); }
+.stg .t-action, .stg .t-loader, .stg .t-API { background: var(--mint); color: var(--teal-dark); }
+.stg h5 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.stg .pl { gap: 3px; }
+.stg .pl li { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 12px; align-items: baseline; }
+.stg .path { font-size: 12.5px; }
+.stg .sum { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+@media (max-width: 900px) {
+  .feat .fb { grid-template-columns: 1fr; }
+  .feat .fshot { position: static; }
+  .stg .pl li { grid-template-columns: 1fr; gap: 0; }
+}
+
+dialog.viewer { width: min(1200px, 96vw); height: min(860px, 92vh); padding: 0; border: 0; border-radius: 18px; box-shadow: 0 20px 60px rgba(15, 50, 45, .35); overflow: hidden; }
+dialog.viewer[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+dialog.viewer::backdrop { background: rgba(20, 40, 36, .55); }
+.vbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--rule); background: #fff; }
+.vbar b { flex: 1; font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vbar button { font: inherit; font-size: 14px; font-weight: 700; min-width: 40px; height: 36px; padding: 0 12px; border-radius: 10px; border: 2px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+.vbar button:hover { border-color: var(--teal); }
+.vbar .zv { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); width: 52px; text-align: center; }
+.vbox { overflow: auto; background: #eef3f1; cursor: grab; }
+.vbox.drag { cursor: grabbing; }
+.vbox img { display: block; margin: 0 auto; max-width: none; user-select: none; -webkit-user-drag: none; }
+
+.ftree { --c: 152px; display: grid; gap: 28px; padding: 16px; width: max-content; }
+.pz { display: grid; gap: 8px; }
+.pz-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pz-bar button { font: inherit; font-size: 13.5px; font-weight: 700; min-width: 36px; height: 32px; padding: 0 12px; border-radius: 10px; border: 2px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+.pz-bar button:hover { border-color: var(--teal); }
+.pz-v { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; width: 46px; text-align: center; }
+.pz-hint { font-size: 12.5px; color: var(--muted); margin-left: 6px; }
+.pz-vp { position: relative; height: 640px; overflow: hidden; border-radius: 14px; border: 1px solid var(--rule); background: #f8fbfa; cursor: grab; touch-action: none; }
+.pz-vp:active { cursor: grabbing; }
+.pz-vp.nojs { overflow: auto; }
+.troot + .troot { padding-top: 28px; border-top: 1px dashed var(--rule); }
+.tn { display: flex; align-items: flex-start; width: max-content; }
+.kids { display: flex; flex-direction: column; position: relative; padding-left: 22px; }
+.kids::before { content: ""; position: absolute; left: 0; top: var(--c); width: 22px; border-top: 2px solid var(--teal-dark); }
+.kid { position: relative; display: flex; align-items: flex-start; padding: 0 0 28px; }
+.kid:last-child { padding-bottom: 0; }
+.kid::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-left: 2px solid var(--teal-dark); }
+.kid:first-child::before { top: var(--c); } .kid:last-child::before { bottom: auto; height: var(--c); } .kid:only-child::before { display: none; }
+.tn .ar { width: 150px; height: 2px; flex: none; position: relative; align-self: flex-start; margin: calc(var(--c) - 1px) 8px 0 0; padding: 0; background: var(--teal-dark); }
+.tn .ar::before { content: none; }
+.tn .ar::after { content: ""; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); border: 6px solid transparent; border-left: 9px solid var(--teal-dark); border-right: 0; }
+.tn .ar span { position: absolute; left: 6px; right: 6px; bottom: 8px; font-size: 13px; font-weight: 700; color: var(--teal-dark); text-align: center; line-height: 1.4; }
+.solo { display: flex; flex-wrap: wrap; gap: 20px; padding-top: 20px; border-top: 1px dashed var(--rule); }
+.scr { width: 460px !important; }
+.scr .si img { height: 300px !important; }
+.scr .si.none { height: 300px !important; }
+@media (max-width: 760px) {
+  .pz-vp { height: auto; overflow: visible; cursor: auto; } .pz-bar { display: none; } .ftree { width: auto; padding: 0; }
+  .tn { flex-direction: column; align-items: stretch; width: 100%; }
+  .kids { padding-left: 14px; border-left: 2px solid var(--line); margin-left: 8px; }
+  .kids::before, .kid::before, .tn .ar::after { display: none; }
+  .kid { flex-direction: column; align-items: stretch; }
+  .tn .ar { width: auto; height: auto; background: none; margin: 0 0 6px; }
+  .kid { padding-bottom: 16px; }
+  .tn .ar span { position: static; display: block; text-align: left; }
+  .tn .ar span::before { content: "↓ "; }
+  .scr { width: 100% !important; }
+}
+
+.topbar .unofficial { font-size: 12px; font-weight: 700; color: #8a5a00; background: #fdf3dc; border: 1px solid #f0dcb4; border-radius: 999px; padding: 3px 12px; white-space: nowrap; }
+@media (max-width: 720px) { .topbar .unofficial { font-size: 11px; padding: 2px 8px; } .topbar .unofficial .long { display: none; } }
+</style>
+</head>
+<body>
+<!-- DEFS -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,1.5 L10,5 L0,8.5 z" fill="#0f8472"/></marker>
+    <marker id="arb" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,1.5 L10,5 L0,8.5 z" fill="#2f6db5"/></marker>
+    <marker id="ari" viewBox="0 0 12 12" refX="11.5" refY="6" markerWidth="12" markerHeight="12" orient="auto"><path d="M1,1 L11,6 L1,11 z" fill="#ffffff" stroke="#0f8472" stroke-width="1.2"/></marker>
+    <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="9" height="9" fill="#ffffff"/><line x1="0" y1="0" x2="0" y2="9" stroke="#c9ced4" stroke-width="1.2"/></pattern>
+  </defs>
+</svg>
+
+
+<header class="topbar"><a class="brand" href="#top"><img src="assets/service-logo.svg" alt="みらいまる見え政治資金"></a><span class="doc">コード逆引き</span><span class="unofficial">非公式<span class="long">の解説資料です</span></span><a class="other" href="marumie-guide-for-students.html">しくみ図鑑へ</a></header>
+<div class="shell" id="top">
+<aside class="side"><nav class="toc" aria-label="目次"><ol><li><a href="#system"><span class="no">01</span>システム構成</a></li><li><a href="#contexts"><span class="no">02</span>コンテキストとレイヤー</a></li><li><a href="#requests"><span class="no">03</span>リクエストの流れ</a></li><li><a href="#data"><span class="no">04</span>データモデル</a></li><li><a href="#screens"><span class="no">05</span>画面遷移図</a></li><li><a href="#lookup"><span class="no">06</span>機能の逆引き</a></li><li><a href="#crosscut"><span class="no">07</span>横断的な仕組み</a></li></ol></nav></aside>
+<div class="wrap">
+<header class="cover">
+  <h1>みらいまる見え政治資金<br><em>コード逆引き</em></h1>
+  <p class="lead">構成図で全体をつかんでから、画面や API の単位で「このコードはどこ？」を引けるリファレンスです。ファイル名はクリックでコピーできます。</p>
+  <p class="basis">main ブランチ（830f7b57、2026年10月6日）のコードをもとに作成</p>
+  <img class="cover-ill" src="assets/inspiration-simple-green.svg" alt="">
+</header>
+
+<section class="part" id="system">
+  <div class="part-head"><span class="no">01</span><span class="cib"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01"/></svg></span><h2>システム構成</h2></div>
+  <h3 class="sub-h">全体</h3>
+  <figure class="dwg" id="fig-system"><div class="sys" role="img" aria-label="システム構成図"><div class="sc c-users"><div class="sc-h">利用者</div><div class="nd r2"><span class="lg"><svg class="lg-g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#0f8472" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span><b>閲覧者</b><small>スマホ・パソコン</small></div><div class="nd r3"><span class="lg"><svg class="lg-g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#2f6db5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h16M6 6h12v9H6zM2 20h20"/></svg></span><b>事務所スタッフ</b><small>会計ソフトの CSV・領収書を登録</small></div></div><div class="ln r2"><span>見る</span><i class="r"></i></div><div class="ln r3"><span>CSV<br>領収書</span><i class="r"></i></div><div class="ln c4 r2"><span>読みだす</span><i class="l"></i></div><div class="ln c4 r3"><span>読み書き</span><i class="l"></i><i class="r"></i></div><div class="ln c4 r4 ai"><span>読み取りを頼む</span><i class="r"></i></div><div class="sc c-vercel"><div class="sc-h"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Vercel"><path fill="#000000" d="M24 22.525H0l12-21.05 12 21.05z"/></svg>Vercel<small style="font-weight:500;color:var(--ink-2)">Next.js 16 × 2</small></div><div class="nd web r2"><span class="lg"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Next.js"><path fill="#000000" d="M18.665 21.978C16.758 23.255 14.465 24 12 24 5.377 24 0 18.623 0 12S5.377 0 12 0s12 5.377 12 12c0 3.583-1.574 6.801-4.067 9.001L9.219 7.2H7.2v9.596h1.615V9.251l9.85 12.727Zm-3.332-8.533 1.6 2.061V7.2h-1.6v6.245Z"/></svg></span><b>webapp</b><small>公開サイト :3000</small></div><div class="nd adm r34"><span class="lg"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Next.js"><path fill="#000000" d="M18.665 21.978C16.758 23.255 14.465 24 12 24 5.377 24 0 18.623 0 12S5.377 0 12 0s12 5.377 12 12c0 3.583-1.574 6.801-4.067 9.001L9.219 7.2H7.2v9.596h1.615V9.251l9.85 12.727Zm-3.332-8.533 1.6 2.061V7.2h-1.6v6.245Z"/></svg></span><b>admin</b><small>管理画面 :3001</small><span class="sig">↑ POST /api/refresh</span></div></div><div class="sc c-data"><div class="sc-h"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Supabase"><path fill="#3FCF8E" d="M11.9 1.036c-.015-.986-1.26-1.41-1.874-.637L.764 12.05C-.33 13.427.65 15.455 2.409 15.455h9.579l.113 7.51c.014.985 1.259 1.408 1.873.636l9.262-11.653c1.093-1.375.113-3.403-1.645-3.403h-9.642z"/></svg>Supabase</div><div class="stack r23"><div class="nd "><span class="lg"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="PostgreSQL"><path fill="#4169E1" d="M23.5594 14.7228a.5269.5269 0 0 0-.0563-.1191c-.139-.2632-.4768-.3418-1.0074-.2321-1.6533.3411-2.2935.1312-2.5256-.0191 1.342-2.0482 2.445-4.522 3.0411-6.8297.2714-1.0507.7982-3.5237.1222-4.7316a1.5641 1.5641 0 0 0-.1509-.235C21.6931.9086 19.8007.0248 17.5099.0005c-1.4947-.0158-2.7705.3461-3.1161.4794a9.449 9.449 0 0 0-.5159-.0816 8.044 8.044 0 0 0-1.3114-.1278c-1.1822-.0184-2.2038.2642-3.0498.8406-.8573-.3211-4.7888-1.645-7.2219.0788C.9359 2.1526.3086 3.8733.4302 6.3043c.0409.818.5069 3.334 1.2423 5.7436.4598 1.5065.9387 2.7019 1.4334 3.582.553.9942 1.1259 1.5933 1.7143 1.7895.4474.1491 1.1327.1441 1.8581-.7279.8012-.9635 1.5903-1.8258 1.9446-2.2069.4351.2355.9064.3625 1.39.3772a.0569.0569 0 0 0 .0004.0041 11.0312 11.0312 0 0 0-.2472.3054c-.3389.4302-.4094.5197-1.5002.7443-.3102.064-1.1344.2339-1.1464.8115-.0025.1224.0329.2309.0919.3268.2269.4231.9216.6097 1.015.6331 1.3345.3335 2.5044.092 3.3714-.6787-.017 2.231.0775 4.4174.3454 5.0874.2212.5529.7618 1.9045 2.4692 1.9043.2505 0 .5263-.0291.8296-.0941 1.7819-.3821 2.5557-1.1696 2.855-2.9059.1503-.8707.4016-2.8753.5388-4.1012.0169-.0703.0357-.1207.057-.1362.0007-.0005.0697-.0471.4272.0307a.3673.3673 0 0 0 .0443.0068l.2539.0223.0149.001c.8468.0384 1.9114-.1426 2.5312-.4308.6438-.2988 1.8057-1.0323 1.5951-1.6698zM2.371 11.8765c-.7435-2.4358-1.1779-4.8851-1.2123-5.5719-.1086-2.1714.4171-3.6829 1.5623-4.4927 1.8367-1.2986 4.8398-.5408 6.108-.13-.0032.0032-.0066.0061-.0098.0094-2.0238 2.044-1.9758 5.536-1.9708 5.7495-.0002.0823.0066.1989.0162.3593.0348.5873.0996 1.6804-.0735 2.9184-.1609 1.1504.1937 2.2764.9728 3.0892.0806.0841.1648.1631.2518.2374-.3468.3714-1.1004 1.1926-1.9025 2.1576-.5677.6825-.9597.5517-1.0886.5087-.3919-.1307-.813-.5871-1.2381-1.3223-.4796-.839-.9635-2.0317-1.4155-3.5126zm6.0072 5.0871c-.1711-.0428-.3271-.1132-.4322-.1772.0889-.0394.2374-.0902.4833-.1409 1.2833-.2641 1.4815-.4506 1.9143-1.0002.0992-.126.2116-.2687.3673-.4426a.3549.3549 0 0 0 .0737-.1298c.1708-.1513.2724-.1099.4369-.0417.156.0646.3078.26.3695.4752.0291.1016.0619.2945-.0452.4444-.9043 1.2658-2.2216 1.2494-3.1676 1.0128zm2.094-3.988-.0525.141c-.133.3566-.2567.6881-.3334 1.003-.6674-.0021-1.3168-.2872-1.8105-.8024-.6279-.6551-.9131-1.5664-.7825-2.5004.1828-1.3079.1153-2.4468.079-3.0586-.005-.0857-.0095-.1607-.0122-.2199.2957-.2621 1.6659-.9962 2.6429-.7724.4459.1022.7176.4057.8305.928.5846 2.7038.0774 3.8307-.3302 4.7363-.084.1866-.1633.3629-.2311.5454zm7.3637 4.5725c-.0169.1768-.0358.376-.0618.5959l-.146.4383a.3547.3547 0 0 0-.0182.1077c-.0059.4747-.054.6489-.115.8693-.0634.2292-.1353.4891-.1794 1.0575-.11 1.4143-.8782 2.2267-2.4172 2.5565-1.5155.3251-1.7843-.4968-2.0212-1.2217a6.5824 6.5824 0 0 0-.0769-.2266c-.2154-.5858-.1911-1.4119-.1574-2.5551.0165-.5612-.0249-1.9013-.3302-2.6462.0044-.2932.0106-.5909.019-.8918a.3529.3529 0 0 0-.0153-.1126 1.4927 1.4927 0 0 0-.0439-.208c-.1226-.4283-.4213-.7866-.7797-.9351-.1424-.059-.4038-.1672-.7178-.0869.067-.276.1831-.5875.309-.9249l.0529-.142c.0595-.16.134-.3257.213-.5012.4265-.9476 1.0106-2.2453.3766-5.1772-.2374-1.0981-1.0304-1.6343-2.2324-1.5098-.7207.0746-1.3799.3654-1.7088.5321a5.6716 5.6716 0 0 0-.1958.1041c.0918-1.1064.4386-3.1741 1.7357-4.4823a4.0306 4.0306 0 0 1 .3033-.276.3532.3532 0 0 0 .1447-.0644c.7524-.5706 1.6945-.8506 2.802-.8325.4091.0067.8017.0339 1.1742.081 1.939.3544 3.2439 1.4468 4.0359 2.3827.8143.9623 1.2552 1.9315 1.4312 2.4543-1.3232-.1346-2.2234.1268-2.6797.779-.9926 1.4189.543 4.1729 1.2811 5.4964.1353.2426.2522.4522.2889.5413.2403.5825.5515.9713.7787 1.2552.0696.087.1372.1714.1885.245-.4008.1155-1.1208.3825-1.0552 1.717-.0123.1563-.0423.4469-.0834.8148-.0461.2077-.0702.4603-.0994.7662zm.8905-1.6211c-.0405-.8316.2691-.9185.5967-1.0105a2.8566 2.8566 0 0 0 .135-.0406 1.202 1.202 0 0 0 .1342.103c.5703.3765 1.5823.4213 3.0068.1344-.2016.1769-.5189.3994-.9533.6011-.4098.1903-1.0957.333-1.7473.3636-.7197.0336-1.0859-.0807-1.1721-.151zm.5695-9.2712c-.0059.3508-.0542.6692-.1054 1.0017-.055.3576-.112.7274-.1264 1.1762-.0142.4368.0404.8909.0932 1.3301.1066.887.216 1.8003-.2075 2.7014a3.5272 3.5272 0 0 1-.1876-.3856c-.0527-.1276-.1669-.3326-.3251-.6162-.6156-1.1041-2.0574-3.6896-1.3193-4.7446.3795-.5427 1.3408-.5661 2.1781-.463zm.2284 7.0137a12.3762 12.3762 0 0 0-.0853-.1074l-.0355-.0444c.7262-1.1995.5842-2.3862.4578-3.4385-.0519-.4318-.1009-.8396-.0885-1.2226.0129-.4061.0666-.7543.1185-1.0911.0639-.415.1288-.8443.1109-1.3505.0134-.0531.0188-.1158.0118-.1902-.0457-.4855-.5999-1.938-1.7294-3.253-.6076-.7073-1.4896-1.4972-2.6889-2.0395.5251-.1066 1.2328-.2035 2.0244-.1859 2.0515.0456 3.6746.8135 4.8242 2.2824a.908.908 0 0 1 .0667.1002c.7231 1.3556-.2762 6.2751-2.9867 10.5405zm-8.8166-6.1162c-.025.1794-.3089.4225-.6211.4225a.5821.5821 0 0 1-.0809-.0056c-.1873-.026-.3765-.144-.5059-.3156-.0458-.0605-.1203-.178-.1055-.2844.0055-.0401.0261-.0985.0925-.1488.1182-.0894.3518-.1226.6096-.0867.3163.0441.6426.1938.6113.4186zm7.9305-.4114c.0111.0792-.049.201-.1531.3102-.0683.0717-.212.1961-.4079.2232a.5456.5456 0 0 1-.075.0052c-.2935 0-.5414-.2344-.5607-.3717-.024-.1765.2641-.3106.5611-.352.297-.0414.6111.0088.6356.1851z"/></svg></span><b>PostgreSQL</b><small>Prisma 経由・25 モデル</small></div><div class="nd "><span class="lg"><svg class="lg-g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#3ecf8e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7a4 4 0 1 1-3.9 4.9L4 19v-3h2v-2h2l2.1-2.1A4 4 0 0 1 15 7z"/></svg></span><b>Auth</b><small>ログイン（メール・Google）</small></div><div class="nd "><span class="lg"><svg class="lg-g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#3ecf8e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h6l2 2h10v11H3z"/></svg></span><b>Storage</b><small>領収書・同期用 JSON</small></div></div></div><div class="sc c-ai"><div class="sc-h"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Claude"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>Anthropic API（Claude）</div><small style="font-size:12.5px;line-height:1.5;color:var(--ink-2)">Vercel AI SDK 経由。領収書の読み取り・住所の検索</small></div></div></figure>
+  <h3 class="sub-h">それぞれの中身</h3>
+  <div class="comps"><article class="comp c-web"><header><span class="clg"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Next.js"><path fill="#000000" d="M18.665 21.978C16.758 23.255 14.465 24 12 24 5.377 24 0 18.623 0 12S5.377 0 12 0s12 5.377 12 12c0 3.583-1.574 6.801-4.067 9.001L9.219 7.2H7.2v9.596h1.615V9.251l9.85 12.727Zm-3.332-8.533 1.6 2.061V7.2h-1.6v6.245Z"/></svg></span><div><b>webapp</b><small>公開サイト :3000</small></div></header><ul><li><code>/o/[slug]/[year]</code><span>政治団体のページ</span></li><li><code>/o/[slug]/[year]/transactions</code><span>取引一覧</span></li><li><code>/p/[slug]/[year]</code><span>議員の調研費ページ</span></li><li><code>/api/refresh</code><span>キャッシュの無効化</span></li><li><code>/api/research-fund/receipts/[entryId]</code><span>領収書の署名 URL</span></li><li><code>loaders</code><span>unstable_cache で読み取り結果を保持</span></li></ul></article><article class="comp c-adm"><header><span class="clg"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Next.js"><path fill="#000000" d="M18.665 21.978C16.758 23.255 14.465 24 12 24 5.377 24 0 18.623 0 12S5.377 0 12 0s12 5.377 12 12c0 3.583-1.574 6.801-4.067 9.001L9.219 7.2H7.2v9.596h1.615V9.251l9.85 12.727Zm-3.332-8.533 1.6 2.061V7.2h-1.6v6.245Z"/></svg></span><div><b>admin</b><small>管理画面 :3001</small></div></header><ul><li><code>proxy.ts</code><span>全リクエストの入口。ログインを確認</span></li><li><code>(public)/*</code><span>ログイン・パスワード再設定</span></li><li><code>(auth)/*</code><span>取りこみ・報告書・調研費</span></li><li><code>/api/*</code><span>XML・CSV・領収書の配信</span></li><li><code>actions</code><span>"use server" で更新し、revalidate まで行う</span></li></ul></article><article class="comp c-data"><header><span class="clg"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Supabase"><path fill="#3FCF8E" d="M11.9 1.036c-.015-.986-1.26-1.41-1.874-.637L.764 12.05C-.33 13.427.65 15.455 2.409 15.455h9.579l.113 7.51c.014.985 1.259 1.408 1.873.636l9.262-11.653c1.093-1.375.113-3.403-1.645-3.403h-9.642z"/></svg></span><div><b>Supabase</b><small>DB・認証・ファイル</small></div></header><ul><li><code>PostgreSQL</code><span>Prisma 経由。定義は prisma/schema.prisma</span></li><li><code>Auth</code><span>メール・Google ログイン</span></li><li><code>Storage</code><span>領収書・同期用 JSON</span></li><li><code>supabase/config.toml</code><span>ローカルは API :54331</span></li></ul></article><article class="comp c-ai"><header><span class="clg"><svg class="lg-b" viewBox="0 0 24 24" role="img" aria-label="Claude"><path fill="#D97757" d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg></span><div><b>Anthropic API（Claude）</b><small>Vercel AI SDK 経由</small></div></header><ul><li><code>research-fund</code><span>領収書の読み取り</span></li><li><code>report</code><span>取引先の住所検索</span></li></ul></article></div>
+</section>
+<section class="part" id="contexts">
+  <div class="part-head"><span class="no">02</span><span class="cib"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h6l2 2h10v11H3zM8 13h8"/></svg></span><h2>コンテキストとレイヤー</h2></div>
+  <p>業務ごとにフォルダを分けている。コンテキストどうしは直接 import せず、共通の処理は <code>shared/</code> に置く。webapp と admin はコードを共有せず、同じデータベースでつながっている。</p>
+  <h3 class="sub-h">コンテキスト</h3>
+  <div class="tree ctree"><ul><li><span class="row"><span class="d">webapp/src/server/contexts/</span></span><ul><li><span class="row"><i class="lay k1"></i><span class="d">public-finance/</span><span class="c">政治団体の集計・サンキー図・貸借対照表、取引一覧・CSV</span></span></li><li><span class="row"><i class="lay k3"></i><span class="d">research-fund/</span><span class="c">公開済みの調研費の表示、領収書の署名 URL・CSV</span></span></li><li><span class="row"><i class="lay k4"></i><span class="d">shared/</span><span class="c">Prisma クライアント、共通モデル</span></span></li></ul></li><li><span class="row"><span class="d">admin/src/server/contexts/</span></span><ul><li><span class="row"><i class="lay k2"></i><span class="d">auth/</span><span class="c">ログイン、ユーザー管理、認可ガード</span></span></li><li><span class="row"><i class="lay k2"></i><span class="d">data-import/</span><span class="c">MF CSV の取りこみ、環境間の同期、取引の削除</span></span></li><li><span class="row"><i class="lay k2"></i><span class="d">report/</span><span class="c">報告書 XML、取引先・寄附者、AI 住所検索</span></span></li><li><span class="row"><i class="lay k3"></i><span class="d">research-fund/</span><span class="c">領収書の AI 読み取り、仕訳の確認・公開、提出用 CSV</span></span></li><li><span class="row"><i class="lay k4"></i><span class="d">shared/</span><span class="c">政治団体・議員・残高・取引、webapp のキャッシュ無効化、同期用 JSON の書き出し</span></span></li></ul></li></ul></div>
+  <h3 class="sub-h">各コンテキストの中（レイヤー）</h3>
+  <div class="tree"><ul><li><span class="row"><span class="d">{webapp,admin}/src/</span></span><ul><li><span class="row"><span class="d">app/</span><span class="c">ルーティング（page.tsx・route.ts）</span></span></li><li><span class="row"><span class="d">client/</span><span class="c">"use client" の部品とヘルパー</span></span></li><li><span class="row"><span class="d">server/contexts/{コンテキスト}/</span></span><ul><li><span class="row"><i class="lay l1"></i><span class="d">presentation/</span></span><ul><li><span class="row"><span class="d">loaders/</span><span class="c">データ取得・unstable_cache</span></span></li><li><span class="row"><span class="d">actions/</span><span class="c">"use server"・revalidate</span></span></li></ul></li><li><span class="row"><i class="lay l2"></i><span class="d">application/</span></span><ul><li><span class="row"><span class="d">usecases/</span><span class="c">1 クラス 1 操作。execute だけ</span></span></li><li><span class="row"><span class="d">services/</span><span class="c">組み立て・スコアリング</span></span></li></ul></li><li><span class="row"><i class="lay l3"></i><span class="d">domain/</span></span><ul><li><span class="row"><span class="d">models/</span><span class="c">1 つのエンティティのルール</span></span></li><li><span class="row"><span class="d">services/</span><span class="c">複数にまたがるルール</span></span></li><li><span class="row"><span class="d">repositories/</span><span class="c">インターフェースだけ</span></span></li></ul></li><li><span class="row"><i class="lay l4"></i><span class="d">infrastructure/</span></span><ul><li><span class="row"><span class="d">repositories/</span><span class="c">prisma-*.repository.ts</span></span></li><li><span class="row"><span class="d">llm/ storage/ mf/ donor-csv/</span><span class="c">外部サービスとの接続</span></span></li></ul></li></ul></li></ul></li></ul></div>
+  <h3 class="sub-h">import できる向き</h3>
+  <div class="dep"><span class="chip">app/</span><i>→</i><span class="chip l1">presentation</span><i>→</i><span class="chip l2">application</span><i>→</i><span class="chip l3">domain</span><i>←</i><span class="chip l4">infrastructure</span></div>
+  <ul class="rules"><li><b>import は矢印の向きだけ</b>逆向きは dependency-cruiser で CI が落ちる</li><li><b>infrastructure は domain のインターフェースを実装</b>presentation で new して usecase に渡す（DI コンテナなし）</li><li><b>client/ から server へは型と純粋関数だけ</b>"use client" は必要なときだけ</li></ul>
+</section>
+<section class="part" id="requests">
+  <div class="part-head"><span class="no">03</span><span class="cib"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM6 15V9a4 4 0 0 1 4-4h6M18 9v6a4 4 0 0 1-4 4H8"/></svg></span><h2>リクエストの流れ</h2></div>
+  <h3 class="sub-h">読み取り <small>政治団体のページを開く</small></h3>
+  <figure class="dwg fc1"><div class="scroll"><svg viewBox="0 0 860 748" role="img" aria-label="読み取りの流れのフローチャート" style="min-width:640px;max-width:860px;margin:0 auto"><rect x="90.0" y="10" width="260" height="46" rx="23.0" style="fill:var(--teal);stroke:var(--teal)"/><text x="220" y="39.0" text-anchor="middle" style="font-size:15.5px;font-weight:700;fill:#fff">ページを開く</text><rect x="70.0" y="86" width="300" height="66" rx="14" style="fill:#f7f8f8;stroke:#9aa4ae;stroke-width:2"/><g transform="translate(86.0 106.0) scale(1.08)" fill="none" stroke="#5b6670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></g><text x="124.0" y="115.0" style="font-size:16px;font-weight:700">page.tsx</text><text x="124.0" y="136.0" style="font-size:13px;fill:var(--ink-2)">URL から slug と年度</text><text class="m" x="386.0" y="124.0" style="font-size:12px;fill:var(--muted)">app/o/[slug]/[year]/page.tsx</text><path d="M220 56 V83" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><rect x="70.0" y="182" width="300" height="66" rx="14" style="fill:var(--blue-wash);stroke:var(--blue);stroke-width:2"/><g transform="translate(86.0 202.0) scale(1.08)" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01"/></g><text x="124.0" y="211.0" style="font-size:16px;font-weight:700">loader</text><text x="124.0" y="232.0" style="font-size:13px;fill:var(--ink-2)">load-top-page-data</text><text class="m" x="386.0" y="220.0" style="font-size:12px;fill:var(--muted)">presentation/loaders/</text><path d="M220 152 V179" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><path d="M220 278 L335.0 326.0 L220 374 L105.0 326.0 Z" style="fill:#fff;stroke:var(--amber);stroke-width:2.2;stroke-linejoin:round"/><text x="220" y="332.0" text-anchor="middle" style="font-size:15px;font-weight:700">キャッシュあり？</text><path d="M220 248 V275" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><rect x="670" y="300" width="170" height="52" rx="12" style="fill:var(--mint);stroke:var(--teal);stroke-width:1.8;stroke-dasharray:6 4"/><g transform="translate(682 315.0)" fill="none" stroke="var(--teal-dark)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 3"/></g><text x="714" y="331.0" style="font-size:14.5px;font-weight:700">そのまま返す</text><path d="M335 326 H666" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><text x="344" y="318" text-anchor="start" style="font-size:13.5px;font-weight:700;fill:var(--teal-dark);paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round">あり</text><rect x="70.0" y="404" width="300" height="66" rx="14" style="fill:var(--mint);stroke:var(--teal);stroke-width:2"/><g transform="translate(86.0 424.0) scale(1.08)" fill="none" stroke="var(--teal-dark)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM11 9l2-1.5V16"/></g><text x="124.0" y="433.0" style="font-size:16px;font-weight:700">usecase</text><text x="124.0" y="454.0" style="font-size:13px;fill:var(--ink-2)">get-sankey-aggregation</text><text class="m" x="386.0" y="442.0" style="font-size:12px;fill:var(--muted)">application/usecases/</text><path d="M220 374 V401" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><text x="230" y="394.0" text-anchor="start" style="font-size:13.5px;font-weight:700;fill:var(--teal-dark);paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round">なし</text><rect x="70.0" y="500" width="300" height="66" rx="14" style="fill:#f7f8f8;stroke:#9aa4ae;stroke-width:2"/><g transform="translate(86.0 520.0) scale(1.08)" fill="none" stroke="#5b6670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></g><text x="124.0" y="529.0" style="font-size:16px;font-weight:700">repository</text><text x="124.0" y="550.0" style="font-size:13px;fill:var(--ink-2)">Prisma で集計 SQL</text><text class="m" x="386.0" y="538.0" style="font-size:12px;fill:var(--muted)">infrastructure/repositories/</text><path d="M220 470 V497" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><rect x="70.0" y="596" width="300" height="66" rx="14" style="fill:var(--amber-wash);stroke:var(--amber);stroke-width:2"/><g transform="translate(86.0 616.0) scale(1.08)" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v14H8a3 3 0 0 1-3-3zM5 18a3 3 0 0 1 3-3h11M9 8h6"/></g><text x="124.0" y="625.0" style="font-size:16px;font-weight:700">domain service</text><text x="124.0" y="646.0" style="font-size:13px;fill:var(--ink-2)">sankey-data-builder</text><text class="m" x="386.0" y="634.0" style="font-size:12px;fill:var(--muted)">domain/services/</text><path d="M220 566 V593" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><rect x="90.0" y="692" width="260" height="46" rx="23.0" style="fill:var(--teal);stroke:var(--teal)"/><text x="220" y="721.0" text-anchor="middle" style="font-size:15.5px;font-weight:700;fill:#fff">キャッシュに保存して表示</text><path d="M220 662 V689" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><path d="M755 352 V715.0 H354" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/></svg></div></figure>
+  <h3 class="sub-h">書きこみ <small>CSV を取りこむ</small></h3>
+  <figure class="dwg fc1"><div class="scroll"><svg viewBox="0 0 860 652" role="img" aria-label="書きこみの流れのフローチャート" style="min-width:640px;max-width:860px;margin:0 auto"><rect x="90.0" y="10" width="260" height="46" rx="23.0" style="fill:var(--blue);stroke:var(--blue)"/><text x="220" y="39.0" text-anchor="middle" style="font-size:15.5px;font-weight:700;fill:#fff">「登録」を押す</text><rect x="70.0" y="86" width="300" height="66" rx="14" style="fill:var(--blue-wash);stroke:var(--blue);stroke-width:2"/><g transform="translate(86.0 106.0) scale(1.08)" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01"/></g><text x="124.0" y="115.0" style="font-size:16px;font-weight:700">action</text><text x="124.0" y="136.0" style="font-size:13px;fill:var(--ink-2)">upload-csv（"use server"）</text><text class="m" x="386.0" y="124.0" style="font-size:12px;fill:var(--muted)">presentation/actions/</text><path d="M220 56 V83" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><path d="M220 182 L335.0 230.0 L220 278 L105.0 230.0 Z" style="fill:#fff;stroke:var(--amber);stroke-width:2.2;stroke-linejoin:round"/><text x="220" y="236.0" text-anchor="middle" style="font-size:15px;font-weight:700">ログイン済み？</text><path d="M220 152 V179" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><rect x="430" y="204" width="150" height="52" rx="12" style="fill:#f7f8f8;stroke:#9aa4ae;stroke-width:1.8;stroke-dasharray:6 4"/><g transform="translate(442 219.0)" fill="none" stroke="#5b6670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21h14M7 21V4h10v17M14 12h.01"/></g><text x="474" y="235.0" style="font-size:14.5px;font-weight:700">ログインへ</text><path d="M335 230 H426" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><text x="344" y="222" text-anchor="start" style="font-size:13.5px;font-weight:700;fill:var(--teal-dark);paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round">いいえ</text><rect x="70.0" y="308" width="300" height="66" rx="14" style="fill:var(--mint);stroke:var(--teal);stroke-width:2"/><g transform="translate(86.0 328.0) scale(1.08)" fill="none" stroke="var(--teal-dark)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM11 9l2-1.5V16"/></g><text x="124.0" y="337.0" style="font-size:16px;font-weight:700">usecase</text><text x="124.0" y="358.0" style="font-size:13px;fill:var(--ink-2)">save-preview-transactions</text><text class="m" x="386.0" y="346.0" style="font-size:12px;fill:var(--muted)">application/usecases/</text><path d="M220 278 V305" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><text x="230" y="298.0" text-anchor="start" style="font-size:13.5px;font-weight:700;fill:var(--teal-dark);paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round">はい</text><rect x="70.0" y="404" width="300" height="66" rx="14" style="fill:#f7f8f8;stroke:#9aa4ae;stroke-width:2"/><g transform="translate(86.0 424.0) scale(1.08)" fill="none" stroke="#5b6670" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></g><text x="124.0" y="433.0" style="font-size:16px;font-weight:700">repository</text><text x="124.0" y="454.0" style="font-size:13px;fill:var(--ink-2)">取引を一括保存</text><text class="m" x="386.0" y="442.0" style="font-size:12px;fill:var(--muted)">infrastructure/repositories/</text><path d="M220 374 V401" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><rect x="70.0" y="500" width="300" height="66" rx="14" style="fill:var(--violet-wash);stroke:var(--violet);stroke-width:2"/><g transform="translate(86.0 520.0) scale(1.08)" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></g><text x="124.0" y="529.0" style="font-size:16px;font-weight:700">公開サイトに通知</text><text x="124.0" y="550.0" style="font-size:13px;fill:var(--ink-2)">POST /api/refresh</text><text class="m" x="386.0" y="538.0" style="font-size:12px;fill:var(--muted)">webapp-cache-invalidator.ts</text><path d="M220 470 V497" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/><rect x="90.0" y="596" width="260" height="46" rx="23.0" style="fill:var(--blue);stroke:var(--blue)"/><text x="220" y="625.0" text-anchor="middle" style="font-size:15.5px;font-weight:700;fill:#fff">{ ok, message } を返す</text><path d="M220 566 V593" style="fill:none;stroke:var(--teal-dark);stroke-width:1.8" marker-end="url(#ar)"/></svg></div></figure>
+</section>
+<section class="part" id="data">
+  <div class="part-head"><span class="no">04</span><span class="cib"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span><h2>データモデル</h2></div>
+  <p>主要なテーブルと、よく使う列だけ。1 と * は「1 対 多」。定義は <code>prisma/schema.prisma</code>。</p>
+  <h3 class="sub-h">政治資金</h3>
+  <figure class="dwg er1"><div class="scroll"><svg viewBox="0 0 1040 830" role="img" aria-label="政治資金のテーブルの ER 図" style="min-width:860px"><path d="M875 627 V683" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><path d="M665 439 H700 V546 H730" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><path d="M375 546 H310" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><path d="M520 463 V519" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><path d="M665 148 H700 V249 H730" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><path d="M520 166 V222" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><path d="M165 147 V222" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><path d="M665 47 H730" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><path d="M310 47 H375" style="fill:none;stroke:#0f8472;stroke-width:1.6"/><rect x="20" y="20" width="290" height="127" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M20 74 V32 a12 12 0 0 1 12 -12 H298 a12 12 0 0 1 12 12 V74 Z" style="fill:#e2f6f3"/><line x1="20" y1="74" x2="310" y2="74" style="stroke:#2aa693;stroke-width:1.5"/><text x="34" y="43" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">Tenant</text><text x="34" y="63" style="font-size:12.5px;fill:var(--ink-2)">データの持ち主の単位</text><text x="34" y="98" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">id</text><text x="34" y="117" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">name</text><text x="34" y="136" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">slug</text><rect x="375" y="20" width="290" height="146" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M375 74 V32 a12 12 0 0 1 12 -12 H653 a12 12 0 0 1 12 12 V74 Z" style="fill:#e2f6f3"/><line x1="375" y1="74" x2="665" y2="74" style="stroke:#2aa693;stroke-width:1.5"/><text x="389" y="43" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">PoliticalOrganization</text><text x="389" y="63" style="font-size:12.5px;fill:var(--ink-2)">政治団体。/o/[slug] の単位</text><text x="389" y="98" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">id</text><text x="389" y="117" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">tenantId</text><text x="389" y="136" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">slug</text><text x="389" y="155" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">displayName</text><rect x="730" y="20" width="290" height="146" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M730 74 V32 a12 12 0 0 1 12 -12 H1008 a12 12 0 0 1 12 12 V74 Z" style="fill:#e2f6f3"/><line x1="730" y1="74" x2="1020" y2="74" style="stroke:#2aa693;stroke-width:1.5"/><text x="744" y="43" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">OrganizationReportProfile</text><text x="744" y="63" style="font-size:12.5px;fill:var(--ink-2)">報告書の表紙（年度ごと）</text><text x="744" y="98" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">politicalOrganizationId</text><text x="744" y="117" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">financialYear</text><text x="744" y="136" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">officialName</text><text x="744" y="155" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">details (Json)</text><rect x="20" y="222" width="290" height="146" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M20 276 V234 a12 12 0 0 1 12 -12 H298 a12 12 0 0 1 12 12 V276 Z" style="fill:#e2f6f3"/><line x1="20" y1="276" x2="310" y2="276" style="stroke:#2aa693;stroke-width:1.5"/><text x="34" y="245" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">User / UserTenantMembership</text><text x="34" y="265" style="font-size:12.5px;fill:var(--ink-2)">ログインする人と所属テナント</text><text x="34" y="300" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">authId</text><text x="34" y="319" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">email</text><text x="34" y="338" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">role</text><text x="34" y="357" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">tenantId</text><rect x="375" y="222" width="290" height="241" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M375 276 V234 a12 12 0 0 1 12 -12 H653 a12 12 0 0 1 12 12 V276 Z" style="fill:#e2f6f3"/><line x1="375" y1="276" x2="665" y2="276" style="stroke:#2aa693;stroke-width:1.5"/><text x="389" y="245" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">Transaction</text><text x="389" y="265" style="font-size:12.5px;fill:var(--ink-2)">取引。会計ソフト CSV の 1 行</text><text x="389" y="300" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">id</text><text x="389" y="319" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">politicalOrganizationId</text><text x="389" y="338" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">transactionNo</text><text x="389" y="357" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">transactionDate</text><text x="389" y="376" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">financialYear</text><text x="389" y="395" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">transactionType</text><text x="389" y="414" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">debitAccount / creditAccount</text><text x="389" y="433" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">debitAmount / creditAmount</text><text x="389" y="452" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">categoryKey</text><rect x="730" y="222" width="290" height="127" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M730 276 V234 a12 12 0 0 1 12 -12 H1008 a12 12 0 0 1 12 12 V276 Z" style="fill:#e2f6f3"/><line x1="730" y1="276" x2="1020" y2="276" style="stroke:#2aa693;stroke-width:1.5"/><text x="744" y="245" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">BalanceSnapshot</text><text x="744" y="265" style="font-size:12.5px;fill:var(--ink-2)">ある日の時点の残高</text><text x="744" y="300" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">politicalOrganizationId</text><text x="744" y="319" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">snapshotDate</text><text x="744" y="338" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">balance</text><rect x="20" y="519" width="290" height="127" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M20 573 V531 a12 12 0 0 1 12 -12 H298 a12 12 0 0 1 12 12 V573 Z" style="fill:#e2f6f3"/><line x1="20" y1="573" x2="310" y2="573" style="stroke:#2aa693;stroke-width:1.5"/><text x="34" y="542" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">Counterpart</text><text x="34" y="562" style="font-size:12.5px;fill:var(--ink-2)">取引先（名前と住所）</text><text x="34" y="597" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">name</text><text x="34" y="616" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">postalCode</text><text x="34" y="635" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">address</text><rect x="375" y="519" width="290" height="108" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M375 573 V531 a12 12 0 0 1 12 -12 H653 a12 12 0 0 1 12 12 V573 Z" style="fill:#e2f6f3"/><line x1="375" y1="573" x2="665" y2="573" style="stroke:#2aa693;stroke-width:1.5"/><text x="389" y="542" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">TransactionCounterpart</text><text x="389" y="562" style="font-size:12.5px;fill:var(--ink-2)">取引と取引先をつなぐ中間テーブル</text><text x="389" y="597" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">transactionId</text><text x="389" y="616" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">counterpartId</text><rect x="730" y="519" width="290" height="108" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M730 573 V531 a12 12 0 0 1 12 -12 H1008 a12 12 0 0 1 12 12 V573 Z" style="fill:#e2f6f3"/><line x1="730" y1="573" x2="1020" y2="573" style="stroke:#2aa693;stroke-width:1.5"/><text x="744" y="542" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">TransactionDonor</text><text x="744" y="562" style="font-size:12.5px;fill:var(--ink-2)">取引と寄附者をつなぐ中間テーブル</text><text x="744" y="597" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">transactionId</text><text x="744" y="616" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">donorId</text><rect x="730" y="683" width="290" height="127" rx="12" style="fill:#fff;stroke:#2aa693;stroke-width:2"/><path d="M730 737 V695 a12 12 0 0 1 12 -12 H1008 a12 12 0 0 1 12 12 V737 Z" style="fill:#e2f6f3"/><line x1="730" y1="737" x2="1020" y2="737" style="stroke:#2aa693;stroke-width:1.5"/><text x="744" y="706" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#0f8472">Donor</text><text x="744" y="726" style="font-size:12.5px;fill:var(--ink-2)">寄附者（個人・法人など）</text><text x="744" y="761" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">donorType</text><text x="744" y="780" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">name</text><text x="744" y="799" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">address</text><text x="322" y="39" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="364" y="39" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="677" y="39" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="719" y="39" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="176" y="163" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="176" y="216" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="531" y="182" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="531" y="216" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="677" y="140" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="719" y="241" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="531" y="479" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="531" y="513" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="364" y="538" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="322" y="538" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="677" y="431" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="719" y="538" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="886" y="643" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="886" y="677" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#0f8472;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text></svg></div></figure>
+  <h3 class="sub-h">調研費</h3>
+  <figure class="dwg er1"><div class="scroll"><svg viewBox="0 0 1040 647" role="img" aria-label="調研費のテーブルの ER 図" style="min-width:860px"><path d="M165 424 V368" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M665 494 H705 V125 H730" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M375 494 H340 V346 H310" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M665 451 H730" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M520 349 V424" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M665 249 H730" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M375 249 H310" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M520 166 V222" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M665 47 H730" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><path d="M375 47 H310" style="fill:none;stroke:#b06f00;stroke-width:1.6"/><rect x="20" y="20" width="290" height="146" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M20 74 V32 a12 12 0 0 1 12 -12 H298 a12 12 0 0 1 12 12 V74 Z" style="fill:#fcefd6"/><line x1="20" y1="74" x2="310" y2="74" style="stroke:#d9a441;stroke-width:1.5"/><text x="34" y="43" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">ResearchFundPrompt</text><text x="34" y="63" style="font-size:12.5px;fill:var(--ink-2)">AI への読み取り指示（版で管理）</text><text x="34" y="98" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">politicianId</text><text x="34" y="117" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">version</text><text x="34" y="136" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">isActive</text><text x="34" y="155" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">body</text><rect x="375" y="20" width="290" height="146" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M375 74 V32 a12 12 0 0 1 12 -12 H653 a12 12 0 0 1 12 12 V74 Z" style="fill:#fcefd6"/><line x1="375" y1="74" x2="665" y2="74" style="stroke:#d9a441;stroke-width:1.5"/><text x="389" y="43" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">Politician</text><text x="389" y="63" style="font-size:12.5px;fill:var(--ink-2)">議員。/p/[slug] の単位</text><text x="389" y="98" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">tenantId</text><text x="389" y="117" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">slug</text><text x="389" y="136" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">name</text><text x="389" y="155" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">isResearchFundPublic</text><rect x="730" y="20" width="290" height="127" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M730 74 V32 a12 12 0 0 1 12 -12 H1008 a12 12 0 0 1 12 12 V74 Z" style="fill:#fcefd6"/><line x1="730" y1="74" x2="1020" y2="74" style="stroke:#d9a441;stroke-width:1.5"/><text x="744" y="43" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">ResearchFundPayee</text><text x="744" y="63" style="font-size:12.5px;fill:var(--ink-2)">支払先（表記ゆれを名寄せ）</text><text x="744" y="98" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">politicianId</text><text x="744" y="117" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">name</text><text x="744" y="136" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">address</text><rect x="20" y="222" width="290" height="146" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M20 276 V234 a12 12 0 0 1 12 -12 H298 a12 12 0 0 1 12 12 V276 Z" style="fill:#fcefd6"/><line x1="20" y1="276" x2="310" y2="276" style="stroke:#d9a441;stroke-width:1.5"/><text x="34" y="245" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">ResearchFundDocument</text><text x="34" y="265" style="font-size:12.5px;fill:var(--ink-2)">領収書などの書類</text><text x="34" y="300" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">bookId</text><text x="34" y="319" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">batchId</text><text x="34" y="338" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">storageKey</text><text x="34" y="357" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">receiptNumber</text><rect x="375" y="222" width="290" height="127" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M375 276 V234 a12 12 0 0 1 12 -12 H653 a12 12 0 0 1 12 12 V276 Z" style="fill:#fcefd6"/><line x1="375" y1="276" x2="665" y2="276" style="stroke:#d9a441;stroke-width:1.5"/><text x="389" y="245" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">ResearchFundBook</text><text x="389" y="265" style="font-size:12.5px;fill:var(--ink-2)">議員 1 人・1 年度の帳簿</text><text x="389" y="300" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">politicianId</text><text x="389" y="319" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">financialYear</text><text x="389" y="338" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">status</text><rect x="730" y="222" width="290" height="127" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M730 276 V234 a12 12 0 0 1 12 -12 H1008 a12 12 0 0 1 12 12 V276 Z" style="fill:#fcefd6"/><line x1="730" y1="276" x2="1020" y2="276" style="stroke:#d9a441;stroke-width:1.5"/><text x="744" y="245" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">ResearchFundExpenditureGroup</text><text x="744" y="265" style="font-size:12.5px;fill:var(--ink-2)">使い道の説明（＋Item・Outcome）</text><text x="744" y="300" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">bookId</text><text x="744" y="319" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">title</text><text x="744" y="338" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">displayOrder</text><rect x="20" y="424" width="290" height="146" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M20 478 V436 a12 12 0 0 1 12 -12 H298 a12 12 0 0 1 12 12 V478 Z" style="fill:#fcefd6"/><line x1="20" y1="478" x2="310" y2="478" style="stroke:#d9a441;stroke-width:1.5"/><text x="34" y="447" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">ResearchFundScanBatch / ScanJob</text><text x="34" y="467" style="font-size:12.5px;fill:var(--ink-2)">AI 読み取りの実行単位</text><text x="34" y="502" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">documentId</text><text x="34" y="521" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">promptId</text><text x="34" y="540" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">status (queued → succeeded)</text><text x="34" y="559" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">rawJson</text><rect x="375" y="424" width="290" height="203" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M375 478 V436 a12 12 0 0 1 12 -12 H653 a12 12 0 0 1 12 12 V478 Z" style="fill:#fcefd6"/><line x1="375" y1="478" x2="665" y2="478" style="stroke:#d9a441;stroke-width:1.5"/><text x="389" y="447" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">ResearchFundJournalEntry</text><text x="389" y="467" style="font-size:12.5px;fill:var(--ink-2)">仕訳。下書き → 確認済 → 公開済</text><text x="389" y="502" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">bookId</text><text x="389" y="521" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">entryDate</text><text x="389" y="540" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">description</text><text x="389" y="559" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">status</text><text x="389" y="578" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">source</text><text x="389" y="597" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">documentId</text><text x="389" y="616" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">payeeId</text><rect x="730" y="424" width="290" height="146" rx="12" style="fill:#fff;stroke:#d9a441;stroke-width:2"/><path d="M730 478 V436 a12 12 0 0 1 12 -12 H1008 a12 12 0 0 1 12 12 V478 Z" style="fill:#fcefd6"/><line x1="730" y1="478" x2="1020" y2="478" style="stroke:#d9a441;stroke-width:1.5"/><text x="744" y="447" style="font-family:var(--f-mono);font-size:13.5px;font-weight:700;fill:#b06f00">ResearchFundJournalLine</text><text x="744" y="467" style="font-size:12.5px;fill:var(--ink-2)">仕訳の借方・貸方の行</text><text x="744" y="502" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">entryId</text><text x="744" y="521" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">side</text><text x="744" y="540" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">accountKey → Account</text><text x="744" y="559" style="font-family:var(--f-mono);font-size:12px;fill:var(--ink)">amount</text><text x="364" y="39" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="322" y="39" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="677" y="39" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="719" y="39" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="531" y="182" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="531" y="216" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="364" y="241" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="322" y="241" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="677" y="241" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="719" y="241" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="531" y="365" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="531" y="418" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="677" y="443" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="719" y="443" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="364" y="486" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="322" y="338" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="677" y="486" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="719" y="117" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text><text x="176" y="418" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">*</text><text x="176" y="384" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#b06f00;paint-order:stroke;stroke:#fff;stroke-width:4px">1</text></svg></div></figure>
+</section>
+
+<section class="part" id="screens">
+  <div class="part-head"><span class="no">05</span><span class="cib"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v12H3zM8 20h8M12 16v4"/></svg></span><h2>画面遷移図</h2></div>
+  <p>図はボタンかドラッグで拡大・縮小・移動できる。画面をクリックすると 1 枚だけ拡大して見られる。</p>
+  <h3 class="sub-h">公開サイト</h3>
+  <div class="lanes"><section class="lane ln-teal"><header><b>公開サイト</b><span>政治団体は本番サイト、調研費は架空のシードデータ</span></header><div class="pz"><div class="pz-bar"><button type="button" data-pz="out" aria-label="縮小">－</button><span class="pz-v">100%</span><button type="button" data-pz="in" aria-label="拡大">＋</button><button type="button" data-pz="fit">全体を表示</button><button type="button" data-pz="reset">原寸</button><span class="pz-hint">ドラッグで移動・Ctrl＋ホイールで拡大縮小</span></div><div class="pz-vp"><div class="ftree"><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/web-org.jpg"><img src="screens/web-org.jpg" alt="政治団体のページの画面" loading="lazy"></a><figcaption><b>政治団体のページ</b><code>/o/[slug]/[year]</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>「すべて見る」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/web-transactions.jpg"><img src="screens/web-transactions.jpg" alt="取引一覧ページの画面" loading="lazy"></a><figcaption><b>取引一覧ページ</b><code>/o/[slug]/[year]/transactions</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>「CSV」</span></span><div class="tn"><figure class="scr"><span class="si none">画面なし</span><figcaption><b>CSV ファイル</b><code>ダウンロード</code></figcaption></figure></div></div></div></div></div><div class="kid"><span class="ar"><span>政党ページの「議員ごとの調研費」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/w-rf.jpg"><img src="screens/w-rf.jpg" alt="議員の調研費ページの画面" loading="lazy"></a><figcaption><b>議員の調研費ページ</b><code>/p/[slug]/[year]</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>「すべて見る」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/w-rf-transactions.jpg"><img src="screens/w-rf-transactions.jpg" alt="調研費の明細一覧の画面" loading="lazy"></a><figcaption><b>調研費の明細一覧</b><code>/p/[slug]/[year]/transactions</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>領収書の印</span></span><div class="tn"><figure class="scr"><span class="si none">画面なし</span><figcaption><b>領収書の表示</b><code>一覧の上に重ねて開く</code></figcaption></figure></div></div></div></div></div></div></div></div></div></div></div></div></div></div></section></div>
+  <h3 class="sub-h">管理画面</h3>
+  <div class="lanes"><section class="lane ln-gray"><header><b>ログイン</b><span>ログインしていないと、どの画面からもここへ戻る</span></header><div class="pz"><div class="pz-bar"><button type="button" data-pz="out" aria-label="縮小">－</button><span class="pz-v">100%</span><button type="button" data-pz="in" aria-label="拡大">＋</button><button type="button" data-pz="fit">全体を表示</button><button type="button" data-pz="reset">原寸</button><span class="pz-hint">ドラッグで移動・Ctrl＋ホイールで拡大縮小</span></div><div class="pz-vp"><div class="ftree"><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-login.jpg"><img src="screens/a-login.jpg" alt="ログインの画面" loading="lazy"></a><figcaption><b>ログイン</b><code>/login</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>ログイン</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-dashboard.jpg"><img src="screens/a-dashboard.jpg" alt="ダッシュボードの画面" loading="lazy"></a><figcaption><b>ダッシュボード</b><code>/</code></figcaption></figure></div></div><div class="kid"><span class="ar"><span>パスワードを忘れた</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-forgot.jpg"><img src="screens/a-forgot.jpg" alt="パスワード再設定の画面" loading="lazy"></a><figcaption><b>パスワード再設定</b><code>/forgot-password</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>メールのリンク</span></span><div class="tn"><figure class="scr"><span class="si none">画面なし</span><figcaption><b>新しいパスワード</b><code>/auth/reset-password</code></figcaption></figure></div></div></div></div></div></div></div></div><div class="troot"><div class="tn"><figure class="scr"><span class="si none">画面なし</span><figcaption><b>招待からの初回設定</b><code>/auth/setup</code></figcaption></figure></div></div></div></div></div></section><section class="lane ln-blue"><header><b>対象の管理</b><span>メニューにいつも出ている</span></header><div class="pz"><div class="pz-bar"><button type="button" data-pz="out" aria-label="縮小">－</button><span class="pz-v">100%</span><button type="button" data-pz="in" aria-label="拡大">＋</button><button type="button" data-pz="fit">全体を表示</button><button type="button" data-pz="reset">原寸</button><span class="pz-hint">ドラッグで移動・Ctrl＋ホイールで拡大縮小</span></div><div class="pz-vp"><div class="ftree"><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-orgs.jpg"><img src="screens/a-orgs.jpg" alt="政治団体の一覧の画面" loading="lazy"></a><figcaption><b>政治団体の一覧</b><code>/political-organizations</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>「新規登録」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-org-new.jpg"><img src="screens/a-org-new.jpg" alt="新規登録の画面" loading="lazy"></a><figcaption><b>新規登録</b><code>/political-organizations/new</code></figcaption></figure></div></div><div class="kid"><span class="ar"><span>行の「編集」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-org-edit.jpg"><img src="screens/a-org-edit.jpg" alt="編集の画面" loading="lazy"></a><figcaption><b>編集</b><code>/political-organizations/[orgId]</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>「報告書の表紙」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-report-profile.jpg"><img src="screens/a-report-profile.jpg" alt="報告書の表紙情報の画面" loading="lazy"></a><figcaption><b>報告書の表紙情報</b><code>…/[orgId]/report-profile</code></figcaption></figure></div></div></div></div></div></div></div></div><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-politicians.jpg"><img src="screens/a-politicians.jpg" alt="議員の一覧の画面" loading="lazy"></a><figcaption><b>議員の一覧</b><code>/politicians</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>「新規登録」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-politician-new.jpg"><img src="screens/a-politician-new.jpg" alt="新規登録の画面" loading="lazy"></a><figcaption><b>新規登録</b><code>/politicians/new</code></figcaption></figure></div></div><div class="kid"><span class="ar"><span>行の「編集」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-politician-edit.jpg"><img src="screens/a-politician-edit.jpg" alt="編集の画面" loading="lazy"></a><figcaption><b>編集</b><code>/politicians/[id]/edit</code></figcaption></figure></div></div><div class="kid"><span class="ar"><span>「帳簿」</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-books.jpg"><img src="screens/a-books.jpg" alt="年度帳簿の画面" loading="lazy"></a><figcaption><b>年度帳簿</b><code>/politicians/[id]/books</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>帳簿を開く</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-rf-scan.jpg"><img src="screens/a-rf-scan.jpg" alt="書類スキャン（調研費へ）の画面" loading="lazy"></a><figcaption><b>書類スキャン（調研費へ）</b><code>…/[bookId]/scan</code></figcaption></figure></div></div></div></div></div></div></div></div></div></div></div><div class="solo"><figure class="scr"><a class="si zoomable" href="screens/a-users.jpg"><img src="screens/a-users.jpg" alt="ユーザー管理（admin のみ）の画面" loading="lazy"></a><figcaption><b>ユーザー管理（admin のみ）</b><code>/users</code></figcaption></figure></div></section><section class="lane ln-blue"><header><b>政治団体と年度を選んでいるとき</b><span>上部のセレクターで団体を選ぶと出る</span></header><div class="pz"><div class="pz-bar"><button type="button" data-pz="out" aria-label="縮小">－</button><span class="pz-v">100%</span><button type="button" data-pz="in" aria-label="拡大">＋</button><button type="button" data-pz="fit">全体を表示</button><button type="button" data-pz="reset">原寸</button><span class="pz-hint">ドラッグで移動・Ctrl＋ホイールで拡大縮小</span></div><div class="pz-vp"><div class="ftree"><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-upload-csv.jpg"><img src="screens/a-upload-csv.jpg" alt="CSV アップロードの画面" loading="lazy"></a><figcaption><b>CSV アップロード</b><code>/upload-csv</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>登録</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-transactions.jpg"><img src="screens/a-transactions.jpg" alt="取引一覧の画面" loading="lazy"></a><figcaption><b>取引一覧</b><code>/transactions</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>まとめて消す</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-bulk-delete.jpg"><img src="screens/a-bulk-delete.jpg" alt="取引一括削除の画面" loading="lazy"></a><figcaption><b>取引一括削除</b><code>/bulk-delete-transactions</code></figcaption></figure></div></div></div></div></div></div></div></div><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-counterparts.jpg"><img src="screens/a-counterparts.jpg" alt="取引先マスタの画面" loading="lazy"></a><figcaption><b>取引先マスタ</b><code>/counterparts</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>行を選ぶ</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-counterpart-detail.jpg"><img src="screens/a-counterpart-detail.jpg" alt="取引先の詳細の画面" loading="lazy"></a><figcaption><b>取引先の詳細</b><code>/counterparts/[id]</code></figcaption></figure></div></div></div></div></div><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-assign-donors.jpg"><img src="screens/a-assign-donors.jpg" alt="寄附者の紐付けの画面" loading="lazy"></a><figcaption><b>寄附者の紐付け</b><code>/assign/donors</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>CSV で取りこむ</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-import-donors.jpg"><img src="screens/a-import-donors.jpg" alt="寄附者 CSV 取りこみの画面" loading="lazy"></a><figcaption><b>寄附者 CSV 取りこみ</b><code>/import-donors</code></figcaption></figure></div></div></div></div></div></div></div></div><div class="solo"><figure class="scr"><a class="si zoomable" href="screens/a-assign-counterparts.jpg"><img src="screens/a-assign-counterparts.jpg" alt="取引先の紐付けの画面" loading="lazy"></a><figcaption><b>取引先の紐付け</b><code>/assign/counterparts</code></figcaption></figure><figure class="scr"><a class="si zoomable" href="screens/a-donors.jpg"><img src="screens/a-donors.jpg" alt="寄附者マスタの画面" loading="lazy"></a><figcaption><b>寄附者マスタ</b><code>/donors</code></figcaption></figure><figure class="scr"><a class="si zoomable" href="screens/a-balance.jpg"><img src="screens/a-balance.jpg" alt="残高の登録の画面" loading="lazy"></a><figcaption><b>残高の登録</b><code>/balance-snapshots</code></figcaption></figure><figure class="scr"><a class="si zoomable" href="screens/a-export-report.jpg"><img src="screens/a-export-report.jpg" alt="報告書エクスポートの画面" loading="lazy"></a><figcaption><b>報告書エクスポート</b><code>/export-report</code></figcaption></figure><figure class="scr"><a class="si zoomable" href="screens/a-sync-export.jpg"><img src="screens/a-sync-export.jpg" alt="同期用エクスポートの画面" loading="lazy"></a><figcaption><b>同期用エクスポート</b><code>/sync-export</code></figcaption></figure></div></section><section class="lane ln-amber"><header><b>議員の年度帳簿を選んでいるとき（調研費）</b><span>上部のセレクターで帳簿を選ぶと出る</span></header><div class="pz"><div class="pz-bar"><button type="button" data-pz="out" aria-label="縮小">－</button><span class="pz-v">100%</span><button type="button" data-pz="in" aria-label="拡大">＋</button><button type="button" data-pz="fit">全体を表示</button><button type="button" data-pz="reset">原寸</button><span class="pz-hint">ドラッグで移動・Ctrl＋ホイールで拡大縮小</span></div><div class="pz-vp"><div class="ftree"><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-rf-scan.jpg"><img src="screens/a-rf-scan.jpg" alt="書類スキャンの画面" loading="lazy"></a><figcaption><b>書類スキャン</b><code>…/[bookId]/scan</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>読み取り後</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-rf-entries.jpg"><img src="screens/a-rf-entries.jpg" alt="仕訳の確認・編集の画面" loading="lazy"></a><figcaption><b>仕訳の確認・編集</b><code>…/[bookId]/entries</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>確認済みを</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-rf-publish.jpg"><img src="screens/a-rf-publish.jpg" alt="公開の画面" loading="lazy"></a><figcaption><b>公開</b><code>…/[bookId]/publish</code></figcaption></figure></div></div><div class="kid"><span class="ar"><span>提出用に</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-rf-submission.jpg"><img src="screens/a-rf-submission.jpg" alt="議員課提出の画面" loading="lazy"></a><figcaption><b>議員課提出</b><code>…/[bookId]/submission</code></figcaption></figure></div></div><div class="kid"><span class="ar"><span>支払先を直す</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-rf-payees.jpg"><img src="screens/a-rf-payees.jpg" alt="支払先の画面" loading="lazy"></a><figcaption><b>支払先</b><code>…/[bookId]/payees</code></figcaption></figure></div></div></div></div></div></div></div></div><div class="troot"><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-rf-groups.jpg"><img src="screens/a-rf-groups.jpg" alt="支出群の一覧の画面" loading="lazy"></a><figcaption><b>支出群の一覧</b><code>…/[bookId]/expenditure-groups</code></figcaption></figure><div class="kids"><div class="kid"><span class="ar"><span>行を選ぶ</span></span><div class="tn"><figure class="scr"><a class="si zoomable" href="screens/a-rf-group-edit.jpg"><img src="screens/a-rf-group-edit.jpg" alt="支出群の編集の画面" loading="lazy"></a><figcaption><b>支出群の編集</b><code>…/expenditure-groups/[groupId]</code></figcaption></figure></div></div></div></div></div></div></div></div><div class="solo"><figure class="scr"><a class="si zoomable" href="screens/a-rf-grants.jpg"><img src="screens/a-rf-grants.jpg" alt="支給の登録の画面" loading="lazy"></a><figcaption><b>支給の登録</b><code>…/[bookId]/grants</code></figcaption></figure><figure class="scr"><a class="si zoomable" href="screens/a-rf-prompts.jpg"><img src="screens/a-rf-prompts.jpg" alt="読み取りプロンプトの画面" loading="lazy"></a><figcaption><b>読み取りプロンプト</b><code>…/[bookId]/prompts</code></figcaption></figure></div></section></div>
+</section>
+
+<section class="part" id="lookup">
+  <div class="part-head"><span class="no">06</span><span class="cib"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4"/></svg></span><h2>機能の逆引き</h2></div>
+  <p>画面ごとに、View → Controller → Model の順にファイルを並べている。ファイル名はクリックでコピー。</p>
+  <div id="results"></div>
+</section>
+
+<section class="part" id="crosscut">
+  <div class="part-head"><span class="no">07</span><span class="cib"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h4v3a2 2 0 1 0 0 0h4v4h-3a2 2 0 1 0 0 4h3v5H6v-5h3a2 2 0 1 0 0-4H6V7h4z"/></svg></span><h2>横断的な仕組み</h2></div>
+  <ul class="xcards"><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3M12 15v2"/></svg></span><span class="k-t"><b>認証・メンテナンス</b><code>admin/src/proxy.ts</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM8.5 12l2.5 2.5 4.5-5"/></svg></span><span class="k-t"><b>操作の権限チェック</b><code>auth/presentation/loaders/require-auth.ts</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7M17 15l3 3-3 3"/></svg></span><span class="k-t"><b>操作中の団体・議員</b><code>shared/presentation/loaders/load-current-organization-target.ts</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 3"/></svg></span><span class="k-t"><b>公開サイトのキャッシュ</b><code>webapp/…/loaders/constants.ts</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></span><span class="k-t"><b>キャッシュを消す</b><code>shared/infrastructure/services/webapp-cache-invalidator.ts</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span><span class="k-t"><b>DB の設計図</b><code>prisma/schema.prisma</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h4v3a2 2 0 1 0 0 0h4v4h-3a2 2 0 1 0 0 4h3v5H6v-5h3a2 2 0 1 0 0-4H6V7h4z"/></svg></span><span class="k-t"><b>Prisma の接続</b><code>shared/infrastructure/prisma.ts</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5"/></svg></span><span class="k-t"><b>AI の呼び出し</b><code>*/infrastructure/llm/</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM5.6 5.6l12.8 12.8"/></svg></span><span class="k-t"><b>エラーの形</b><code>*/domain/types/validation.ts</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v14H8a3 3 0 0 1-3-3zM5 18a3 3 0 0 1 3-3h11M9 8h6"/></svg></span><span class="k-t"><b>報告書 XML の仕様</b><code>docs/reference/report-format.md</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14M13 6l6 6-6 6"/></svg></span><span class="k-t"><b>依存ルールの検査</b><code>.dependency-cruiser.cjs</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM11 9l2-1.5V16"/></svg></span><span class="k-t"><b>usecase の形の検査</b><code>scripts/check-usecase-shape.mjs</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg></span><span class="k-t"><b>SEO（sitemap）</b><code>webapp/src/app/sitemap.ts</code></span></li><li><span class="k-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9l11 4-5 2-2 5zM4 4l2 2M9 3v3M3 9h3"/></svg></span><span class="k-t"><b>テスト</b><code>{webapp,admin}/tests/ ・ e2e/</code></span></li></ul>
+</section>
+
+<footer class="colophon">
+  <span>page.tsx → loaders / actions → usecases の import を辿ってまとめた資料です。パスが見つからないときはファイル名で検索してください。</span>
+  <span>github.com/team-mirai/marumie</span>
+</footer>
+</div>
+</div>
+
+<script>
+
+const W = "webapp/src/", A = "admin/src/";
+const wc = (ctx) => W + "server/contexts/" + ctx + "/";
+const ac = (ctx) => A + "server/contexts/" + ctx + "/";
+const PF = wc("public-finance"), WRF = wc("research-fund");
+const AU = ac("auth"), DI = ac("data-import"), RP = ac("report"), RF = ac("research-fund"), SH = ac("shared");
+const uc = (base, names) => names.map((n) => base + "application/usecases/" + n + "-usecase.ts");
+const BOOK = A + "app/(auth)/politicians/[id]/books/[bookId]/";
+
+const FEATURES = [
+  // ---------------- webapp ----------------
+  { group: "公開サイト（政治資金）", app: "webapp", name: "政治団体のトップページ", url: "/o/[slug]/[year]",
+    desc: "収支サマリー、サンキー図、月別推移、貸借対照表、取引の抜粋。政党なら調研費のサマリーも出す",
+    page: [W + "app/o/[slug]/[year]/page.tsx"],
+    ui: [W + "client/components/top-page/", W + "client/components/top-page/features/charts/SankeyChart.tsx", W + "client/components/top-page/features/charts/MonthlyChart.tsx"],
+    pres: [PF + "presentation/loaders/load-top-page-data.ts", PF + "presentation/loaders/load-organizations.ts", WRF + "presentation/loaders/load-research-fund-party-summary.ts"],
+    app_: uc(PF, ["get-sankey-aggregation", "get-monthly-aggregation", "get-balance-sheet", "get-transactions-by-slug", "get-mock-transaction-page-data"]),
+    dom: [PF + "domain/services/sankey-data-builder.ts", PF + "domain/models/balance-sheet.ts", PF + "domain/models/monthly-aggregation.ts"],
+    inf: [PF + "infrastructure/repositories/prisma-transaction.repository.ts", PF + "infrastructure/repositories/prisma-balance-sheet.repository.ts", PF + "infrastructure/repositories/prisma-monthly-aggregation.repository.ts", PF + "infrastructure/repositories/prisma-balance-snapshot.repository.ts"] },
+  { group: "公開サイト（政治資金）", app: "webapp", name: "政治団体の取引一覧", url: "/o/[slug]/[year]/transactions",
+    desc: "全取引の一覧（並べ替え・カテゴリ絞りこみ・ページング）",
+    page: [W + "app/o/[slug]/[year]/transactions/page.tsx"],
+    ui: [W + "client/components/transactions/"],
+    pres: [PF + "presentation/loaders/load-transactions-page-data.ts"],
+    app_: uc(PF, ["get-transactions-by-slug"]),
+    dom: [PF + "domain/models/display-transaction.ts"],
+    inf: [PF + "infrastructure/repositories/prisma-transaction.repository.ts"] },
+  { group: "公開サイト（政治資金）", app: "webapp", name: "取引の CSV ダウンロード", url: "取引一覧のダウンロードボタン",
+    desc: "クライアントから \"use server\" の関数を呼んで CSV を返す",
+    ui: [W + "client/components/transactions/CsvDownloadLink.tsx"],
+    pres: [PF + "presentation/loaders/load-transactions-for-csv.ts"],
+    app_: uc(PF, ["get-transactions-for-csv", "get-all-transactions-by-slug"]) },
+  { group: "公開サイト（政治資金）", app: "webapp", name: "団体・年度の振り分け", url: "/o/[slug] ・ /o/[slug]/transactions",
+    desc: "slug を検証し、デフォルトの年度へリダイレクト",
+    page: [W + "app/o/[slug]/page.tsx", W + "app/o/[slug]/transactions/page.tsx"],
+    pres: [PF + "presentation/loaders/load-organizations.ts"],
+    app_: uc(PF, ["get-organizations"]),
+    inf: [PF + "infrastructure/repositories/prisma-political-organization.repository.ts"] },
+  { group: "公開サイト（調研費）", app: "webapp", name: "議員の調研費ページ", url: "/p/[slug]/[year]",
+    desc: "KPI、流れ図、月別推移、支出カテゴリ、ハイライト。公開済みの仕訳だけを使う",
+    page: [W + "app/p/[slug]/[year]/page.tsx"],
+    ui: [W + "client/components/research-fund/"],
+    pres: [WRF + "presentation/loaders/load-research-fund-page.ts"],
+    app_: uc(WRF, ["get-research-fund-page"]),
+    dom: [WRF + "domain/models/research-fund-page.ts", WRF + "domain/services/research-fund-coverage.ts", WRF + "domain/services/research-fund-category-color.ts", WRF + "domain/services/research-fund-category-description.ts"],
+    inf: [WRF + "infrastructure/repositories/prisma-research-fund.repository.ts"] },
+  { group: "公開サイト（調研費）", app: "webapp", name: "調研費の取引一覧と CSV", url: "/p/[slug]/[year]/transactions",
+    desc: "仕訳の一覧、領収書モーダル、CSV ダウンロード",
+    page: [W + "app/p/[slug]/[year]/transactions/page.tsx", W + "app/p/[slug]/page.tsx"],
+    ui: [W + "client/components/research-fund/ResearchFundTransactionsTable.tsx", W + "client/components/research-fund/ReceiptModal.tsx", W + "client/components/research-fund/ResearchFundCsvDownloadLink.tsx"],
+    pres: [WRF + "presentation/loaders/load-research-fund-page.ts", WRF + "presentation/loaders/download-research-fund-csv.ts"],
+    dom: [WRF + "domain/services/research-fund-csv.ts"] },
+  { group: "公開サイト（調研費）", app: "webapp", name: "領収書画像の配信", url: "GET /api/research-fund/receipts/[entryId]",
+    desc: "公開済みの仕訳に紐づく領収書だけ、Storage の署名 URL を返す",
+    page: [W + "app/api/research-fund/receipts/[entryId]/route.ts"],
+    pres: [WRF + "presentation/loaders/load-research-fund-receipt.ts"],
+    app_: uc(WRF, ["get-research-fund-receipt"]),
+    dom: [WRF + "domain/models/research-fund-receipt-publication.ts", WRF + "domain/repositories/receipt-storage.interface.ts"],
+    inf: [WRF + "infrastructure/storage/supabase-receipt-storage.ts"] },
+  { group: "公開サイト（調研費）", app: "webapp", name: "政党ページの調研費サマリー・議員一覧", url: "/o/[slug]/[year] の一部 ・ sitemap",
+    desc: "所属議員の調研費をまとめて表示。公開設定の議員だけを対象にする",
+    page: [W + "app/sitemap.ts"],
+    ui: [W + "client/components/research-fund/ResearchFundPartySection.tsx"],
+    pres: [WRF + "presentation/loaders/load-research-fund-party-summary.ts", WRF + "presentation/loaders/load-research-fund-politicians.ts", WRF + "presentation/loaders/load-published-research-fund-pages.ts"],
+    app_: uc(WRF, ["get-research-fund-party-summary", "get-research-fund-politicians", "get-published-research-fund-pages"]),
+    dom: [WRF + "domain/models/research-fund-party-summary.ts", WRF + "domain/models/research-fund-politician-list.ts"] },
+  { group: "公開サイト（共通）", app: "webapp", name: "キャッシュ無効化 API", url: "POST /api/refresh",
+    desc: "x-refresh-token を検証して revalidateTag。admin の更新から呼ばれる",
+    page: [W + "app/api/refresh/route.ts"],
+    pres: [PF + "presentation/loaders/constants.ts", WRF + "presentation/loaders/constants.ts"] },
+
+  // ---------------- admin: auth ----------------
+  { group: "管理画面：認証・ユーザー", app: "admin", name: "ログイン（メール・Google）", url: "/login ・ /api/auth/callback",
+    page: [A + "app/(public)/login/page.tsx", A + "app/api/auth/callback/route.ts"],
+    ui: [A + "client/components/auth/"],
+    pres: [AU + "presentation/actions/login.ts", AU + "presentation/actions/login-with-google.ts", AU + "presentation/actions/exchange-code-for-session.ts", AU + "presentation/loaders/load-login-providers.ts"],
+    app_: uc(AU, ["login", "login-with-google", "exchange-code-for-session", "logout"]) },
+  { group: "管理画面：認証・ユーザー", app: "admin", name: "招待・パスワード設定・リセット", url: "/auth/setup ・ /auth/reset-password ・ /forgot-password",
+    page: [A + "app/(public)/auth/setup/page.tsx", A + "app/(public)/auth/reset-password/page.tsx", A + "app/(public)/forgot-password/page.tsx"],
+    pres: [AU + "presentation/actions/setup-password.ts", AU + "presentation/actions/reset-password.ts", AU + "presentation/actions/request-password-reset.ts", AU + "presentation/actions/complete-invite-session.ts", AU + "presentation/actions/complete-recovery-session.ts"],
+    app_: uc(AU, ["setup-password", "reset-password", "request-password-reset", "complete-invite-session", "complete-recovery-session"]) },
+  { group: "管理画面：認証・ユーザー", app: "admin", name: "ユーザー管理", url: "/users",
+    desc: "招待とロール変更（admin ロールのみ）",
+    page: [A + "app/(auth)/users/page.tsx"],
+    ui: [A + "client/components/user-management/"],
+    pres: [AU + "presentation/actions/invite-user.ts", AU + "presentation/actions/update-user-role.ts", AU + "presentation/loaders/load-all-users.ts"],
+    app_: uc(AU, ["invite-user", "update-user-role", "get-all-users"]) },
+
+  // ---------------- admin: organizations ----------------
+  { group: "管理画面：政治団体・議員", app: "admin", name: "政治団体の管理", url: "/political-organizations ・ /new ・ /[orgId]",
+    page: [A + "app/(auth)/political-organizations/page.tsx", A + "app/(auth)/political-organizations/new/page.tsx", A + "app/(auth)/political-organizations/[orgId]/page.tsx"],
+    ui: [A + "client/components/political-organizations/"],
+    pres: [SH + "presentation/actions/create-political-organization.ts", SH + "presentation/actions/update-political-organization.ts", SH + "presentation/actions/delete-political-organization.ts", SH + "presentation/loaders/load-political-organizations-data.ts"],
+    app_: uc(SH, ["create-political-organization", "update-political-organization", "delete-political-organization", "get-political-organizations"]),
+    inf: [SH + "infrastructure/repositories/prisma-political-organization.repository.ts"] },
+  { group: "管理画面：政治団体・議員", app: "admin", name: "報告書プロフィール（表紙情報）", url: "/political-organizations/[orgId]/report-profile",
+    page: [A + "app/(auth)/political-organizations/[orgId]/report-profile/page.tsx"],
+    ui: [A + "client/components/report-profile/"],
+    pres: [RP + "presentation/actions/save-organization-profile.ts", RP + "presentation/loaders/organization-profile-loader.ts"],
+    app_: uc(RP, ["save-organization-profile", "get-organization-profile"]),
+    dom: [RP + "domain/models/organization-report-profile.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-organization-report-profile.repository.ts"] },
+  { group: "管理画面：政治団体・議員", app: "admin", name: "議員の管理と調研費の公開スイッチ", url: "/politicians ・ /new ・ /[id]/edit",
+    page: [A + "app/(auth)/politicians/page.tsx", A + "app/(auth)/politicians/new/page.tsx", A + "app/(auth)/politicians/[id]/edit/page.tsx"],
+    ui: [A + "client/components/politicians/"],
+    pres: [SH + "presentation/actions/manage-politician.ts", SH + "presentation/loaders/load-politicians.ts"],
+    app_: uc(SH, ["save-politician", "delete-politician", "set-politician-research-fund-public", "list-politicians", "get-politician"]),
+    inf: [SH + "infrastructure/repositories/prisma-politician.repository.ts"] },
+  { group: "管理画面：政治団体・議員", app: "admin", name: "残高スナップショット", url: "/balance-snapshots",
+    desc: "ある日時点の残高を登録（貸借対照表に使う）",
+    page: [A + "app/(auth)/balance-snapshots/page.tsx", A + "app/api/balance-snapshots/route.ts"],
+    ui: [A + "client/components/balance-snapshots/"],
+    pres: [SH + "presentation/actions/create-balance-snapshot.ts", SH + "presentation/actions/delete-balance-snapshot.ts", SH + "presentation/loaders/load-balance-snapshots-data.ts"],
+    app_: uc(SH, ["create-balance-snapshot", "delete-balance-snapshot"]),
+    inf: [SH + "infrastructure/repositories/prisma-balance-snapshot.repository.ts"] },
+
+  // ---------------- admin: data import ----------------
+  { group: "管理画面：取引データ", app: "admin", name: "MFクラウド CSV の取りこみ", url: "/upload-csv",
+    desc: "プレビュー → 有効な行だけ保存 → webapp のキャッシュ無効化",
+    page: [A + "app/(auth)/upload-csv/page.tsx"],
+    ui: [A + "client/components/csv-upload/"],
+    pres: [DI + "presentation/actions/preview-csv.ts", DI + "presentation/actions/upload-csv.ts"],
+    app_: uc(DI, ["preview-mf-csv", "save-preview-transactions"]),
+    dom: [DI + "domain/services/encoding-converter.ts", DI + "domain/services/transaction-validator.ts", DI + "domain/services/preview-stats-calculator.ts", DI + "domain/models/preview-transaction.ts"],
+    inf: [DI + "infrastructure/mf/mf-csv-loader.ts", DI + "infrastructure/mf/mf-record-converter.ts", SH + "infrastructure/repositories/prisma-transaction.repository.ts", SH + "infrastructure/services/webapp-cache-invalidator.ts"] },
+  { group: "管理画面：取引データ", app: "admin", name: "取引の一覧・削除", url: "/transactions ・ /bulk-delete-transactions",
+    page: [A + "app/(auth)/transactions/page.tsx", A + "app/(auth)/bulk-delete-transactions/page.tsx", A + "app/api/transactions/route.ts", A + "app/api/transactions/search-by-nos/route.ts"],
+    ui: [A + "client/components/transactions/"],
+    pres: [DI + "presentation/actions/delete-transaction.ts", DI + "presentation/actions/bulk-delete-transactions.ts", DI + "presentation/actions/delete-all-transactions.ts", DI + "presentation/loaders/load-transactions-by-nos.ts", SH + "presentation/actions/clear-webapp-cache.ts"],
+    app_: uc(DI, ["get-transactions", "delete-all-transactions"]).concat(uc(SH, ["clear-webapp-cache"])) },
+  { group: "管理画面：取引データ", app: "admin", name: "環境間の同期（JSON 書き出し・取りこみ）", url: "/sync-export ・ /sync-import",
+    desc: "団体1件分の政治資金データを JSON に書き出し、別環境で丸ごと置き換える",
+    page: [A + "app/(auth)/sync-export/page.tsx", A + "app/(auth)/sync-import/page.tsx", A + "app/api/export-organization-sync/route.ts"],
+    ui: [A + "client/components/sync-export/", A + "client/components/sync-import/"],
+    pres: [DI + "presentation/actions/prepare-sync-import-upload.ts", DI + "presentation/actions/preview-sync-import.ts", DI + "presentation/actions/run-sync-import.ts"],
+    app_: uc(SH, ["export-organization-sync"]).concat(uc(DI, ["prepare-sync-import-upload", "preview-organization-sync-import", "import-organization-sync"])),
+    inf: [SH + "infrastructure/repositories/prisma-organization-sync-export.repository.ts", DI + "infrastructure/storage/supabase-sync-import-file-storage.ts"] },
+
+  // ---------------- admin: report ----------------
+  { group: "管理画面：報告書", app: "admin", name: "報告書 XML のプレビューと出力", url: "/export-report ・ GET /api/export-report",
+    desc: "収入・支出・寄附を組み立てて、総務省の様式の XML にする",
+    page: [A + "app/(auth)/export-report/page.tsx", A + "app/api/export-report/route.ts"],
+    ui: [A + "client/components/export-report/"],
+    pres: [RP + "presentation/loaders/report-preview-loader.ts", RP + "presentation/actions/update-grant-expenditure-flag.ts"],
+    app_: uc(RP, ["xml-export", "update-grant-expenditure-flag"]).concat([RP + "application/services/income-assembler.ts", RP + "application/services/expense-assembler.ts", RP + "application/services/donation-assembler.ts"]),
+    dom: [RP + "domain/services/report-serializer.ts", RP + "domain/services/income-serializer.ts", RP + "domain/services/expense-serializer.ts", RP + "domain/services/donation-serializer.ts", RP + "domain/services/summary-serializer.ts", RP + "domain/models/grant-expenditure-rules.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-report-transaction.repository.ts"] },
+  { group: "管理画面：報告書", app: "admin", name: "取引先マスタと AI 住所検索", url: "/counterparts ・ /counterparts/[id]",
+    page: [A + "app/(auth)/counterparts/page.tsx", A + "app/(auth)/counterparts/[id]/page.tsx"],
+    ui: [A + "client/components/counterparts/"],
+    pres: [RP + "presentation/actions/create-counterpart.ts", RP + "presentation/actions/update-counterpart.ts", RP + "presentation/actions/delete-counterpart.ts", RP + "presentation/actions/search-counterpart-address.ts", RP + "presentation/loaders/counterparts-loader.ts", RP + "presentation/loaders/counterpart-detail-loader.ts"],
+    app_: uc(RP, ["create-counterpart", "update-counterpart", "delete-counterpart", "search-counterpart-address", "get-counterparts", "get-counterpart-detail", "get-counterpart-transactions"]),
+    dom: [RP + "domain/models/counterpart.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-counterpart.repository.ts", RP + "infrastructure/llm/vercel-ai-gateway.ts", RP + "infrastructure/llm/prompt-templates/"] },
+  { group: "管理画面：報告書", app: "admin", name: "取引と取引先の紐付け", url: "/assign/counterparts",
+    desc: "一括紐付け・解除と、よく使う取引先の提案",
+    page: [A + "app/(auth)/assign/counterparts/page.tsx"],
+    ui: [A + "client/components/counterpart-assignment/"],
+    pres: [RP + "presentation/actions/bulk-assign-counterpart.ts", RP + "presentation/actions/bulk-unassign-counterpart.ts", RP + "presentation/actions/suggest-counterpart.ts", RP + "presentation/loaders/transactions-with-counterparts-loader.ts"],
+    app_: uc(RP, ["bulk-assign-counterpart", "bulk-unassign-counterpart", "suggest-counterpart", "get-transactions-with-counterparts"]).concat([RP + "application/services/counterpart-suggester.ts"]),
+    dom: [RP + "domain/models/counterpart-assignment-rules.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-transaction-counterpart.repository.ts"] },
+  { group: "管理画面：報告書", app: "admin", name: "寄附者マスタ・紐付け・CSV 取りこみ", url: "/donors ・ /assign/donors ・ /import-donors",
+    page: [A + "app/(auth)/donors/page.tsx", A + "app/(auth)/assign/donors/page.tsx", A + "app/(auth)/import-donors/page.tsx"],
+    ui: [A + "client/components/donors/", A + "client/components/donor-assignment/", A + "client/components/donor-csv-import/"],
+    pres: [RP + "presentation/actions/create-donor.ts", RP + "presentation/actions/update-donor.ts", RP + "presentation/actions/delete-donor.ts", RP + "presentation/actions/bulk-assign-donor.ts", RP + "presentation/actions/preview-donor-csv.ts", RP + "presentation/actions/import-donor-csv.ts", RP + "presentation/loaders/donors-loader.ts", RP + "presentation/loaders/transactions-with-donors-loader.ts"],
+    app_: uc(RP, ["create-donor", "update-donor", "delete-donor", "assign-donor", "preview-donor-csv", "import-donor-csv", "get-donors", "get-transactions-with-donors"]),
+    dom: [RP + "domain/models/donor.ts", RP + "domain/models/donor-assignment-rules.ts", RP + "domain/services/donor-csv-validator.ts"],
+    inf: [RP + "infrastructure/repositories/prisma-donor.repository.ts", RP + "infrastructure/repositories/prisma-transaction-donor.repository.ts", RP + "infrastructure/donor-csv/"] },
+
+  // ---------------- admin: research fund ----------------
+  { group: "管理画面：調研費", app: "admin", name: "帳簿（議員×年度）の作成", url: "/politicians/[id]/books",
+    page: [A + "app/(auth)/politicians/[id]/books/page.tsx"],
+    ui: [A + "client/components/books/"],
+    pres: [RF + "presentation/actions/manage-book.ts", RF + "presentation/loaders/load-books.ts"],
+    app_: uc(RF, ["create-book", "update-book", "list-books"]),
+    dom: [RF + "domain/models/book.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-book.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "交付（受け取り）の登録", url: "…/books/[bookId]/grants",
+    desc: "支給額を登録すると、受け取りの仕訳が自動で作られる",
+    page: [BOOK + "grants/page.tsx"],
+    pres: [RF + "presentation/actions/register-grant.ts", RF + "presentation/loaders/load-grants.ts"],
+    app_: uc(RF, ["register-grant", "list-grants"]),
+    dom: [RF + "domain/services/grant-journal-builder.ts", RF + "domain/models/grant-registration.ts", RF + "domain/models/grant-schedule.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-grant.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "領収書スキャン（AI 読み取り）", url: "…/books/[bookId]/scan",
+    desc: "アップロード → スキャンジョブ → Claude が JSON で読み取り → 仕訳の下書き。再読み取り・リトライも",
+    page: [BOOK + "scan/page.tsx"],
+    ui: [A + "client/components/research-fund/DocumentScan.tsx"],
+    pres: [RF + "presentation/actions/create-scan-batch.ts", RF + "presentation/actions/process-scan-jobs.ts", RF + "presentation/actions/retry-scan-job.ts", RF + "presentation/actions/reread-scan-documents.ts", RF + "presentation/loaders/load-scan.ts"],
+    app_: uc(RF, ["create-scan-batch", "process-scan-jobs", "retry-scan-job", "create-reread-batch", "list-scan-batches", "register-document"]),
+    dom: [RF + "domain/services/scan-journal-builder.ts", RF + "domain/services/issuer-payee-matcher.ts", RF + "domain/services/receipt-extraction-prompt.ts", RF + "domain/models/extracted-receipt.ts", RF + "domain/models/scan-job.ts", RF + "domain/models/scan-batch.ts"],
+    inf: [RF + "infrastructure/llm/vercel-ai-receipt-extraction-gateway.ts", RF + "infrastructure/storage/supabase-document-storage.ts", RF + "infrastructure/repositories/prisma-scan.repository.ts", RF + "infrastructure/repositories/prisma-document.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "仕訳のレビュー", url: "…/books/[bookId]/entries",
+    desc: "編集、確認済みにする、下書きに戻す、破棄、支払先・立替者の設定、精算、領収書等番号の採番",
+    page: [BOOK + "entries/page.tsx", A + "app/api/research-fund/documents/[documentId]/route.ts"],
+    ui: [A + "client/components/research-fund/JournalReview.tsx"],
+    pres: [RF + "presentation/actions/manage-journal-review.ts", RF + "presentation/loaders/load-journal-review.ts", RF + "presentation/loaders/load-journal-document.ts"],
+    app_: uc(RF, ["save-journal-entry", "create-journal-entry", "approve-journal-entries", "revert-journal-entry-to-draft", "discard-journal-entry", "set-journal-entries-payee", "set-journal-entries-advanced-by", "settle-journal-entries", "assign-receipt-numbers", "set-receipt-absence-reason", "list-journal-review"]),
+    dom: [RF + "domain/models/journal-entry.ts", RF + "domain/models/journal-review.ts", RF + "domain/models/journal-posting.ts", RF + "domain/models/receipt-number.ts", RF + "domain/models/advance.ts", RF + "domain/models/receipt-absence.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-journal-review.repository.ts", RF + "infrastructure/repositories/prisma-receipt-number.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "支払先の管理", url: "…/books/[bookId]/payees",
+    desc: "支払先の名寄せ。仕訳との紐付けは manual / rule / ai の3種類",
+    page: [BOOK + "payees/page.tsx"],
+    ui: [A + "client/components/research-fund/PayeeList.tsx"],
+    pres: [RF + "presentation/actions/manage-payees.ts", RF + "presentation/loaders/load-payees.ts"],
+    app_: uc(RF, ["save-payee", "create-payee-and-link", "list-payees"]),
+    dom: [RF + "domain/models/payee.ts", RF + "domain/services/issuer-payee-matcher.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-payee.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "使途の説明グループ", url: "…/books/[bookId]/expenditure-groups",
+    desc: "複数の支出をまとめて「何のための支出か」を説明する。並べ替え・使途方針も",
+    page: [BOOK + "expenditure-groups/page.tsx", BOOK + "expenditure-groups/new/page.tsx", BOOK + "expenditure-groups/[groupId]/page.tsx"],
+    ui: [A + "client/components/research-fund/ExpenditureGroupList.tsx", A + "client/components/research-fund/ExpenditureGroupForm.tsx"],
+    pres: [RF + "presentation/actions/manage-expenditure-groups.ts", RF + "presentation/loaders/load-expenditure-groups.ts"],
+    app_: uc(RF, ["save-expenditure-group", "delete-expenditure-group", "reorder-expenditure-groups", "save-usage-policy", "list-expenditure-groups", "get-expenditure-group-form"]),
+    dom: [RF + "domain/models/expenditure-group.ts", RF + "domain/services/expense-journal-builder.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-expenditure-group.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "読み取りプロンプトの調整", url: "…/books/[bookId]/prompts",
+    desc: "事務所ごとの追加指示を保存・テスト・ロールバック",
+    page: [BOOK + "prompts/page.tsx"],
+    ui: [A + "client/components/research-fund/PromptEditor.tsx"],
+    pres: [RF + "presentation/actions/manage-prompt.ts", RF + "presentation/actions/test-prompt.ts", RF + "presentation/loaders/load-prompts.ts"],
+    app_: uc(RF, ["save-prompt", "rollback-prompt", "test-prompt", "get-prompt-overview", "list-prompt-test-documents"]),
+    dom: [RF + "domain/models/prompt.ts", RF + "domain/services/receipt-extraction-prompt.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-prompt.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "公開", url: "…/books/[bookId]/publish",
+    desc: "確認済みの仕訳を公開済みにして webapp に出す。公開の取り消しも",
+    page: [BOOK + "publish/page.tsx"],
+    ui: [A + "client/components/research-fund/JournalPublication.tsx"],
+    pres: [RF + "presentation/actions/publish-journal-entries.ts", RF + "presentation/loaders/load-publication.ts"],
+    app_: uc(RF, ["publish-journal-entries", "unpublish-journal-entry", "get-publication-snapshot"]),
+    dom: [RF + "domain/models/publication.ts", RF + "domain/models/journal-entry-hash.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-publication.repository.ts"] },
+  { group: "管理画面：調研費", app: "admin", name: "議員課への提出用帳簿", url: "…/books/[bookId]/submission ・ GET /api/research-fund/books/[bookId]/submission-ledger",
+    desc: "衆議院・参議院のフォーマットに合わせた CSV（UTF-8 BOM 付き）",
+    page: [BOOK + "submission/page.tsx", A + "app/api/research-fund/books/[bookId]/submission-ledger/route.ts"],
+    pres: [RF + "presentation/loaders/load-submission-ledger.ts"],
+    app_: uc(RF, ["get-submission-ledger", "export-submission-ledger-csv"]),
+    dom: [RF + "domain/models/submission-ledger.ts"],
+    inf: [RF + "infrastructure/repositories/prisma-submission-ledger.repository.ts"] },
+];
+
+
+const ICONS = {
+  sankey: "M3 6h4c5 0 5 6 10 6h4M3 18h4c5 0 5-6 10-6",
+  list: "M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01",
+  download: "M12 3v12M7 10l5 5 5-5M4 21h16",
+  upload: "M12 21V9M7 14l5-5 5 5M4 3h16",
+  forward: "M4 12h13M13 7l5 5-5 5M21 4v16",
+  person: "M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4.4 3.6-8 8-8s8 3.6 8 8",
+  receipt: "M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5zM9 8h6M9 12h6M9 16h3",
+  party: "M4 21V7l8-4 8 4v14M4 21h16M9 21v-5h6v5M8 10h.01M12 10h.01M16 10h.01",
+  refresh: "M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7",
+  lock: "M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3M12 15v2",
+  key: "M15 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM12 12v9M12 17h3M12 20h2",
+  users: "M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 6.5M18 14c1.9.8 3 2.9 3 6",
+  cover: "M6 3h12v18H6zM9 7h6M9 11h6M9 15h3",
+  politician: "M12 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 21l1.5-6.5h11L19 21M12 14.5V21",
+  coins: "M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6",
+  trash: "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3",
+  sync: "M4 9a8 8 0 0 1 14-3l2 2M20 4v4h-4M20 15a8 8 0 0 1-14 3l-2-2M4 20v-4h4",
+  xml: "M6 3h8l4 4v14H6zM14 3v4h4M10 12l-2 2 2 2M14 12l2 2-2 2",
+  pin: "M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12zM12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z",
+  link: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
+  heart: "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z",
+  book: "M5 4h11a3 3 0 0 1 3 3v14H8a3 3 0 0 1-3-3zM5 18a3 3 0 0 1 3-3h11M9 8h6",
+  yen: "M7 4l5 7 5-7M12 11v9M8 13h8M8 16.5h8",
+  scan: "M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M8 9h8v6H8z",
+  check: "M4 4h16v16H4zM8 12.5l3 3 5-6",
+  store: "M4 9l1.5-5h13L20 9M4 9h16v11H4zM9 20v-6h6v6",
+  folder: "M3 6h6l2 2h10v11H3zM8 13h8",
+  chat: "M4 5h16v11H9l-5 4zM8 9h8M8 12h5",
+  globe: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18",
+  ledger: "M5 3h14v18H5zM9 3v18M12 8h4M12 12h4M12 16h4",
+  sparkle: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z",
+};
+const RENAME = {
+  "政治団体のトップページ": ["政治団体のページ（グラフ）", "sankey"],
+  "政治団体の取引一覧": ["政治団体の取引一覧ページ", "list"],
+  "取引の CSV ダウンロード": ["取引の CSV ダウンロード", "download"],
+  "団体・年度の振り分け": ["年度ページへの自動移動", "forward"],
+  "議員の調研費ページ": ["議員の調研費ページ（グラフ）", "politician"],
+  "調研費の取引一覧と CSV": ["調研費の明細一覧と CSV ダウンロード", "list"],
+  "領収書画像の配信": ["領収書画像の表示", "receipt"],
+  "政党ページの調研費サマリー・議員一覧": ["政党ページの調研費まとめ", "party"],
+  "キャッシュ無効化 API": ["表示データの更新（キャッシュ削除）", "refresh"],
+  "ログイン（メール・Google）": ["ログイン画面", "lock"],
+  "招待・パスワード設定・リセット": ["パスワードの設定・再設定画面", "key"],
+  "ユーザー管理": ["ユーザー管理画面", "users"],
+  "政治団体の管理": ["政治団体の登録・編集画面", "party"],
+  "報告書プロフィール（表紙情報）": ["報告書の表紙情報の入力画面", "cover"],
+  "議員の管理と調研費の公開スイッチ": ["議員の登録・公開設定画面", "politician"],
+  "残高スナップショット": ["残高の登録画面", "coins"],
+  "MFクラウド CSV の取りこみ": ["CSV アップロード画面", "upload"],
+  "取引の一覧・削除": ["取引一覧・一括削除画面", "trash"],
+  "環境間の同期（JSON 書き出し・取りこみ）": ["データ同期画面（書き出し・取りこみ）", "sync"],
+  "報告書 XML のプレビューと出力": ["報告書 XML のダウンロード画面", "xml"],
+  "取引先マスタと AI 住所検索": ["取引先の管理画面（AI 住所検索つき）", "pin"],
+  "取引と取引先の紐付け": ["取引先の割り当て画面", "link"],
+  "寄附者マスタ・紐付け・CSV 取りこみ": ["寄附者の管理・割り当て画面", "heart"],
+  "帳簿（議員×年度）の作成": ["帳簿の作成画面", "book"],
+  "交付（受け取り）の登録": ["調研費の受け取り登録画面", "yen"],
+  "領収書スキャン（AI 読み取り）": ["領収書の読み取り画面（AI）", "scan"],
+  "仕訳のレビュー": ["仕訳の確認画面", "check"],
+  "支払先の管理": ["支払先の管理画面", "store"],
+  "使途の説明グループ": ["使い道の説明画面", "folder"],
+  "読み取りプロンプトの調整": ["AI への指示の調整画面", "chat"],
+  "公開": ["公開画面", "globe"],
+  "議員課への提出用帳簿": ["提出用帳簿のダウンロード画面", "ledger"],
+};
+const GROUP_RENAME = {
+  "公開サイト（政治資金）": "公開サイト：政治資金",
+  "公開サイト（調研費）": "公開サイト：調研費",
+  "公開サイト（共通）": "公開サイト：共通",
+};
+FEATURES.forEach((f) => {
+  const r = RENAME[f.name];
+  if (!r) throw new Error("no rename: " + f.name);
+  f.orig = f.name;
+  f.name = r[0];
+  f.icon = r[1];
+  f.groupLabel = GROUP_RENAME[f.group] || f.group;
+});
+function iconSvg(key, cls) {
+  const ns = "http://www.w3.org/2000/svg";
+  const s = document.createElementNS(ns, "svg");
+  s.setAttribute("viewBox", "0 0 24 24");
+  s.setAttribute("class", cls || "ic");
+  s.setAttribute("aria-hidden", "true");
+  const p = document.createElementNS(ns, "path");
+  p.setAttribute("d", ICONS[key]);
+  s.append(p);
+  return s;
+}
+
+
+const SCREENS = [
+  { g: "公開サイト", n: "政治団体のページ", u: "/o/team-mirai/2026", f: "web-org", src: "本番" },
+  { g: "公開サイト", n: "取引一覧ページ", u: "/o/team-mirai/2026/transactions", f: "web-transactions", src: "本番" },
+  { g: "公開サイト", n: "議員の調研費ページ", u: "/p/sample-taro/2026", f: "w-rf" },
+  { g: "公開サイト", n: "調研費の明細一覧", u: "/p/sample-taro/2026/transactions", f: "w-rf-transactions" },
+  { g: "管理画面：入口", n: "ログイン", u: "/login", f: "a-login" },
+  { g: "管理画面：入口", n: "パスワード再設定", u: "/forgot-password", f: "a-forgot" },
+  { g: "管理画面：入口", n: "ダッシュボード", u: "/", f: "a-dashboard" },
+  { g: "管理画面：対象の管理", n: "政治団体の一覧", u: "/political-organizations", f: "a-orgs" },
+  { g: "管理画面：対象の管理", n: "政治団体の新規登録", u: "/political-organizations/new", f: "a-org-new" },
+  { g: "管理画面：対象の管理", n: "政治団体の編集", u: "/political-organizations/[orgId]", f: "a-org-edit" },
+  { g: "管理画面：対象の管理", n: "報告書の表紙情報", u: "/political-organizations/[orgId]/report-profile", f: "a-report-profile" },
+  { g: "管理画面：対象の管理", n: "議員の一覧", u: "/politicians", f: "a-politicians" },
+  { g: "管理画面：対象の管理", n: "議員の新規登録", u: "/politicians/new", f: "a-politician-new" },
+  { g: "管理画面：対象の管理", n: "議員の編集", u: "/politicians/[id]/edit", f: "a-politician-edit" },
+  { g: "管理画面：対象の管理", n: "年度帳簿", u: "/politicians/[id]/books", f: "a-books" },
+  { g: "管理画面：対象の管理", n: "ユーザー管理", u: "/users", f: "a-users" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "取引一覧", u: "/transactions", f: "a-transactions" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "取引一括削除", u: "/bulk-delete-transactions", f: "a-bulk-delete" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "CSV アップロード", u: "/upload-csv", f: "a-upload-csv" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "残高登録", u: "/balance-snapshots", f: "a-balance" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "取引先マスタ", u: "/counterparts", f: "a-counterparts" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "取引先の詳細", u: "/counterparts/[id]", f: "a-counterpart-detail" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "取引先紐付け", u: "/assign/counterparts", f: "a-assign-counterparts" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "寄付者マスタ", u: "/donors", f: "a-donors" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "寄付者紐付け", u: "/assign/donors", f: "a-assign-donors" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "寄付者 CSV 取込", u: "/import-donors", f: "a-import-donors" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "報告書エクスポート", u: "/export-report", f: "a-export-report" },
+  { g: "管理画面：政治団体×年度を選んでいるとき", n: "同期用エクスポート", u: "/sync-export", f: "a-sync-export" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "書類スキャン", u: "…/books/[bookId]/scan", f: "a-rf-scan" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "仕訳の確認・編集", u: "…/books/[bookId]/entries", f: "a-rf-entries" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "公開", u: "…/books/[bookId]/publish", f: "a-rf-publish" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "議員課提出", u: "…/books/[bookId]/submission", f: "a-rf-submission" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "支給の登録", u: "…/books/[bookId]/grants", f: "a-rf-grants" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "支払先", u: "…/books/[bookId]/payees", f: "a-rf-payees" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "支出群と成果", u: "…/books/[bookId]/expenditure-groups", f: "a-rf-groups" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "支出群の編集", u: "…/expenditure-groups/[groupId]", f: "a-rf-group-edit" },
+  { g: "管理画面：議員の年度帳簿を選んでいるとき（調研費）", n: "読み取りプロンプト", u: "…/books/[bookId]/prompts", f: "a-rf-prompts" },
+];
+const SHOTS = {
+  "政治団体のトップページ": "web-org", "政治団体の取引一覧": "web-transactions",
+  "議員の調研費ページ": "w-rf", "調研費の取引一覧と CSV": "w-rf-transactions",
+  "ログイン（メール・Google）": "a-login", "招待・パスワード設定・リセット": "a-forgot", "ユーザー管理": "a-users",
+  "政治団体の管理": "a-orgs", "報告書プロフィール（表紙情報）": "a-report-profile", "議員の管理と調研費の公開スイッチ": "a-politicians",
+  "残高スナップショット": "a-balance", "MFクラウド CSV の取りこみ": "a-upload-csv", "取引の一覧・削除": "a-transactions",
+  "環境間の同期（JSON 書き出し・取りこみ）": "a-sync-export", "報告書 XML のプレビューと出力": "a-export-report",
+  "取引先マスタと AI 住所検索": "a-counterparts", "取引と取引先の紐付け": "a-assign-counterparts", "寄附者マスタ・紐付け・CSV 取りこみ": "a-donors",
+  "帳簿（議員×年度）の作成": "a-books", "交付（受け取り）の登録": "a-rf-grants", "領収書スキャン（AI 読み取り）": "a-rf-scan",
+  "仕訳のレビュー": "a-rf-entries", "支払先の管理": "a-rf-payees", "使途の説明グループ": "a-rf-groups",
+  "読み取りプロンプトの調整": "a-rf-prompts", "公開": "a-rf-publish", "議員課への提出用帳簿": "a-rf-submission",
+};
+
+
+const ctxOf = (p) => { const m = p.match(/contexts\/([^/]+)\//); return m ? m[1] : ""; };
+const base = (p) => { const parts = p.split("/"); return p.endsWith("/") ? parts[parts.length - 2] + "/" : parts[parts.length - 1]; };
+const shortName = (p, main) => {
+  const c = ctxOf(p);
+  const b = base(p).replace(/\.tsx?$/, "").replace(/-usecase$/, "");
+  if (!c) return p.replace(/^(webapp|admin)\/src\//, "");
+  return c === main ? b : c + " / " + b;
+};
+const mainCtxOf = (f) => {
+  const freq = {};
+  [...(f.pres || []), ...(f.app_ || []), ...(f.dom || []), ...(f.inf || [])].map(ctxOf).filter(Boolean).forEach((c) => (freq[c] = (freq[c] || 0) + 1));
+  return Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0] || "";
+};
+FEATURES.forEach((f) => {
+  f.ctx = mainCtxOf(f);
+  f._h = [f.name, f.orig, f.url, f.desc || "", f.group, ...["page", "ui", "pres", "app_", "dom", "inf"].flatMap((k) => f[k] || [])].join(" ").toLowerCase();
+});
+
+function el(tag, attrs, text) {
+  const e = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function pathList(paths, main, short) {
+  const ul = el("ul", { class: "pl" });
+  for (const p of paths || []) {
+    const li = el("li");
+    const b = el("button", { type: "button", class: "path", title: p }, short ? shortName(p, main) : p.replace(/^(webapp|admin)\/src\//, ""));
+    b.dataset.path = p;
+    li.append(b);
+    ul.append(li);
+  }
+  return ul;
+}
+
+const SUM = {"webapp/src/app/o/[slug]/[year]/page.tsx": "政治団体ページ。年度を検証してデータを渡す", "webapp/src/client/components/top-page/": "トップページの部品一式", "webapp/src/client/components/top-page/features/charts/SankeyChart.tsx": "収支の流れ（サンキー図）を描く", "webapp/src/client/components/top-page/features/charts/MonthlyChart.tsx": "月別の収支グラフを描く", "webapp/src/server/contexts/public-finance/presentation/loaders/load-top-page-data.ts": "トップページに必要なデータをまとめて取る", "webapp/src/server/contexts/public-finance/presentation/loaders/load-organizations.ts": "団体の一覧（切り替え用）を取る", "webapp/src/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary.ts": "政党ページに出す議員の調研費サマリーを取る", "webapp/src/server/contexts/public-finance/application/usecases/get-sankey-aggregation-usecase.ts": "サンキー図用に取引を集計する", "webapp/src/server/contexts/public-finance/application/usecases/get-monthly-aggregation-usecase.ts": "月別の収支を集計する", "webapp/src/server/contexts/public-finance/application/usecases/get-balance-sheet-usecase.ts": "貸借対照表を作る", "webapp/src/server/contexts/public-finance/application/usecases/get-transactions-by-slug-usecase.ts": "団体の取引を取る（抜粋表示用）", "webapp/src/server/contexts/public-finance/application/usecases/get-mock-transaction-page-data-usecase.ts": "データが無いときの見本データ", "webapp/src/server/contexts/public-finance/domain/services/sankey-data-builder.ts": "集計結果をサンキー図の形に組み立てる", "webapp/src/server/contexts/public-finance/domain/models/balance-sheet.ts": "貸借対照表のモデル", "webapp/src/server/contexts/public-finance/domain/models/monthly-aggregation.ts": "月別集計のモデル", "webapp/src/server/contexts/public-finance/infrastructure/repositories/prisma-transaction.repository.ts": "取引を DB から読む", "webapp/src/server/contexts/public-finance/infrastructure/repositories/prisma-balance-sheet.repository.ts": "貸借対照表用の集計 SQL", "webapp/src/server/contexts/public-finance/infrastructure/repositories/prisma-monthly-aggregation.repository.ts": "月別集計の SQL", "webapp/src/server/contexts/public-finance/infrastructure/repositories/prisma-balance-snapshot.repository.ts": "残高の記録を読む", "webapp/src/app/o/[slug]/[year]/transactions/page.tsx": "取引一覧ページ", "webapp/src/client/components/transactions/": "取引一覧の部品一式", "webapp/src/server/contexts/public-finance/presentation/loaders/load-transactions-page-data.ts": "取引一覧ページのデータを取る", "webapp/src/server/contexts/public-finance/domain/models/display-transaction.ts": "表示用の取引の形（相殺は除外）", "webapp/src/client/components/transactions/CsvDownloadLink.tsx": "CSV ダウンロードのボタン", "webapp/src/server/contexts/public-finance/presentation/loaders/load-transactions-for-csv.ts": "CSV 用の取引を取る（\"use server\"）", "webapp/src/server/contexts/public-finance/application/usecases/get-transactions-for-csv-usecase.ts": "CSV 用に全取引を取る", "webapp/src/server/contexts/public-finance/application/usecases/get-all-transactions-by-slug-usecase.ts": "団体の全取引を取る", "webapp/src/app/o/[slug]/page.tsx": "年度なし URL を最新年度へ移す", "webapp/src/app/o/[slug]/transactions/page.tsx": "年度なしの取引一覧を最新年度へ移す", "webapp/src/server/contexts/public-finance/application/usecases/get-organizations-usecase.ts": "団体の一覧を取る", "webapp/src/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository.ts": "団体を DB から読む", "webapp/src/app/p/[slug]/[year]/page.tsx": "議員の調研費ページ", "webapp/src/client/components/research-fund/": "調研費ページの部品一式", "webapp/src/server/contexts/research-fund/presentation/loaders/load-research-fund-page.ts": "調研費ページのデータを取る", "webapp/src/server/contexts/research-fund/application/usecases/get-research-fund-page-usecase.ts": "支給・支出・カテゴリ別の集計を作る", "webapp/src/server/contexts/research-fund/domain/models/research-fund-page.ts": "調研費ページのモデル", "webapp/src/server/contexts/research-fund/domain/services/research-fund-coverage.ts": "公開している期間（何月分か）を出す", "webapp/src/server/contexts/research-fund/domain/services/research-fund-category-color.ts": "カテゴリの色", "webapp/src/server/contexts/research-fund/domain/services/research-fund-category-description.ts": "カテゴリの説明文", "webapp/src/server/contexts/research-fund/infrastructure/repositories/prisma-research-fund.repository.ts": "公開済みの仕訳を DB から読む", "webapp/src/app/p/[slug]/[year]/transactions/page.tsx": "調研費の明細一覧ページ", "webapp/src/app/p/[slug]/page.tsx": "年度なし URL を最新年度へ移す", "webapp/src/client/components/research-fund/ResearchFundTransactionsTable.tsx": "明細一覧の表", "webapp/src/client/components/research-fund/ReceiptModal.tsx": "領収書を開くモーダル", "webapp/src/client/components/research-fund/ResearchFundCsvDownloadLink.tsx": "明細の CSV ダウンロードボタン", "webapp/src/server/contexts/research-fund/presentation/loaders/download-research-fund-csv.ts": "明細を CSV にして返す（\"use server\"）", "webapp/src/server/contexts/research-fund/domain/services/research-fund-csv.ts": "明細を CSV 文字列にする", "webapp/src/app/api/research-fund/receipts/[entryId]/route.ts": "領収書の原本へリダイレクトする API", "webapp/src/server/contexts/research-fund/presentation/loaders/load-research-fund-receipt.ts": "領収書の署名 URL を取る", "webapp/src/server/contexts/research-fund/application/usecases/get-research-fund-receipt-usecase.ts": "公開済みの仕訳の領収書だけ返す", "webapp/src/server/contexts/research-fund/domain/models/research-fund-receipt-publication.ts": "領収書を公開してよいかの判定", "webapp/src/server/contexts/research-fund/domain/repositories/receipt-storage.interface.ts": "領収書ストレージのインターフェース", "webapp/src/server/contexts/research-fund/infrastructure/storage/supabase-receipt-storage.ts": "Supabase Storage で署名 URL を発行", "webapp/src/app/sitemap.ts": "サイトマップを作る", "webapp/src/client/components/research-fund/ResearchFundPartySection.tsx": "政党ページの「所属議員の調研費」欄", "webapp/src/server/contexts/research-fund/presentation/loaders/load-research-fund-politicians.ts": "組織セレクタに出す議員を取る", "webapp/src/server/contexts/research-fund/presentation/loaders/load-published-research-fund-pages.ts": "サイトマップ用の議員ページ一覧を取る", "webapp/src/server/contexts/research-fund/application/usecases/get-research-fund-party-summary-usecase.ts": "政党の所属議員の調研費をまとめる", "webapp/src/server/contexts/research-fund/application/usecases/get-research-fund-politicians-usecase.ts": "公開中の議員の一覧を取る", "webapp/src/server/contexts/research-fund/application/usecases/get-published-research-fund-pages-usecase.ts": "公開中の議員ページの一覧を作る", "webapp/src/server/contexts/research-fund/domain/models/research-fund-party-summary.ts": "議員サマリーのモデル", "webapp/src/server/contexts/research-fund/domain/models/research-fund-politician-list.ts": "セレクタ用の議員リストのモデル", "webapp/src/app/api/refresh/route.ts": "キャッシュを無効化する API（トークン必須）", "webapp/src/server/contexts/public-finance/presentation/loaders/constants.ts": "キャッシュ保持時間（公開サイト）", "webapp/src/server/contexts/research-fund/presentation/loaders/constants.ts": "キャッシュ保持時間（調研費）", "admin/src/app/(public)/login/page.tsx": "ログイン画面", "admin/src/app/api/auth/callback/route.ts": "OAuth のコールバック", "admin/src/client/components/auth/": "ログイン関連の部品", "admin/src/server/contexts/auth/presentation/actions/login.ts": "メールとパスワードでログイン", "admin/src/server/contexts/auth/presentation/actions/login-with-google.ts": "Google ログインを始める", "admin/src/server/contexts/auth/presentation/actions/exchange-code-for-session.ts": "コールバックのコードをセッションに変える", "admin/src/server/contexts/auth/presentation/loaders/load-login-providers.ts": "画面に出すログイン手段を取る", "admin/src/server/contexts/auth/application/usecases/login-usecase.ts": "ログイン処理", "admin/src/server/contexts/auth/application/usecases/login-with-google-usecase.ts": "Google ログイン開始の処理", "admin/src/server/contexts/auth/application/usecases/exchange-code-for-session-usecase.ts": "OAuth コールバックの処理", "admin/src/server/contexts/auth/application/usecases/logout-usecase.ts": "ログアウト処理", "admin/src/app/(public)/auth/setup/page.tsx": "招待からの初回設定画面", "admin/src/app/(public)/auth/reset-password/page.tsx": "新しいパスワードの設定画面", "admin/src/app/(public)/forgot-password/page.tsx": "パスワード再設定の申請画面", "admin/src/server/contexts/auth/presentation/actions/setup-password.ts": "初回のパスワードを設定する", "admin/src/server/contexts/auth/presentation/actions/reset-password.ts": "新しいパスワードを設定する", "admin/src/server/contexts/auth/presentation/actions/request-password-reset.ts": "再設定メールを送る", "admin/src/server/contexts/auth/presentation/actions/complete-invite-session.ts": "招待リンクのセッションを完了する", "admin/src/server/contexts/auth/presentation/actions/complete-recovery-session.ts": "再設定リンクのセッションを完了する", "admin/src/server/contexts/auth/application/usecases/setup-password-usecase.ts": "初回パスワード設定の処理", "admin/src/server/contexts/auth/application/usecases/reset-password-usecase.ts": "パスワード再設定の処理", "admin/src/server/contexts/auth/application/usecases/request-password-reset-usecase.ts": "再設定メール送信の処理", "admin/src/server/contexts/auth/application/usecases/complete-invite-session-usecase.ts": "招待セッション完了の処理", "admin/src/server/contexts/auth/application/usecases/complete-recovery-session-usecase.ts": "再設定セッション完了の処理", "admin/src/app/(auth)/users/page.tsx": "ユーザー管理画面", "admin/src/client/components/user-management/": "ユーザー管理の部品", "admin/src/server/contexts/auth/presentation/actions/invite-user.ts": "ユーザーを招待する", "admin/src/server/contexts/auth/presentation/actions/update-user-role.ts": "ユーザーの権限を変える", "admin/src/server/contexts/auth/presentation/loaders/load-all-users.ts": "全ユーザーを取る（admin のみ）", "admin/src/server/contexts/auth/application/usecases/invite-user-usecase.ts": "ユーザー招待の処理", "admin/src/server/contexts/auth/application/usecases/update-user-role-usecase.ts": "権限変更の処理", "admin/src/server/contexts/auth/application/usecases/get-all-users-usecase.ts": "全ユーザー取得の処理", "admin/src/app/(auth)/political-organizations/page.tsx": "政治団体の一覧画面", "admin/src/app/(auth)/political-organizations/new/page.tsx": "政治団体の新規登録画面", "admin/src/app/(auth)/political-organizations/[orgId]/page.tsx": "政治団体の編集画面", "admin/src/client/components/political-organizations/": "政治団体の部品", "admin/src/server/contexts/shared/presentation/actions/create-political-organization.ts": "政治団体を作る", "admin/src/server/contexts/shared/presentation/actions/update-political-organization.ts": "政治団体を更新する", "admin/src/server/contexts/shared/presentation/actions/delete-political-organization.ts": "政治団体を削除する", "admin/src/server/contexts/shared/presentation/loaders/load-political-organizations-data.ts": "政治団体の一覧を取る", "admin/src/server/contexts/shared/application/usecases/create-political-organization-usecase.ts": "政治団体作成の処理", "admin/src/server/contexts/shared/application/usecases/update-political-organization-usecase.ts": "政治団体更新の処理", "admin/src/server/contexts/shared/application/usecases/delete-political-organization-usecase.ts": "政治団体削除の処理", "admin/src/server/contexts/shared/application/usecases/get-political-organizations-usecase.ts": "政治団体一覧取得の処理", "admin/src/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository.ts": "政治団体を DB に読み書き", "admin/src/app/(auth)/political-organizations/[orgId]/report-profile/page.tsx": "報告書の表紙情報の画面", "admin/src/client/components/report-profile/": "表紙情報の入力フォーム", "admin/src/server/contexts/report/presentation/actions/save-organization-profile.ts": "表紙情報を保存する", "admin/src/server/contexts/report/presentation/loaders/organization-profile-loader.ts": "表紙情報を取る", "admin/src/server/contexts/report/application/usecases/save-organization-profile-usecase.ts": "表紙情報保存の処理", "admin/src/server/contexts/report/application/usecases/get-organization-profile-usecase.ts": "表紙情報取得の処理", "admin/src/server/contexts/report/domain/models/organization-report-profile.ts": "表紙情報（代表者・会計責任者など）のモデル", "admin/src/server/contexts/report/infrastructure/repositories/prisma-organization-report-profile.repository.ts": "表紙情報を DB に読み書き", "admin/src/app/(auth)/politicians/page.tsx": "議員の一覧画面", "admin/src/app/(auth)/politicians/new/page.tsx": "議員の新規登録画面", "admin/src/app/(auth)/politicians/[id]/edit/page.tsx": "議員の編集画面", "admin/src/client/components/politicians/": "議員の部品", "admin/src/server/contexts/shared/presentation/actions/manage-politician.ts": "議員の保存・削除・公開設定", "admin/src/server/contexts/shared/presentation/loaders/load-politicians.ts": "議員の一覧を取る", "admin/src/server/contexts/shared/application/usecases/save-politician-usecase.ts": "議員保存の処理", "admin/src/server/contexts/shared/application/usecases/delete-politician-usecase.ts": "議員削除の処理", "admin/src/server/contexts/shared/application/usecases/set-politician-research-fund-public-usecase.ts": "調研費の公開・非公開を切り替える", "admin/src/server/contexts/shared/application/usecases/list-politicians-usecase.ts": "議員一覧取得の処理", "admin/src/server/contexts/shared/application/usecases/get-politician-usecase.ts": "議員 1 人の取得", "admin/src/server/contexts/shared/infrastructure/repositories/prisma-politician.repository.ts": "議員を DB に読み書き", "admin/src/app/(auth)/balance-snapshots/page.tsx": "残高の登録画面", "admin/src/app/api/balance-snapshots/route.ts": "残高の API", "admin/src/client/components/balance-snapshots/": "残高の部品", "admin/src/server/contexts/shared/presentation/actions/create-balance-snapshot.ts": "残高を登録する", "admin/src/server/contexts/shared/presentation/actions/delete-balance-snapshot.ts": "残高を削除する", "admin/src/server/contexts/shared/presentation/loaders/load-balance-snapshots-data.ts": "残高の一覧を取る", "admin/src/server/contexts/shared/application/usecases/create-balance-snapshot-usecase.ts": "残高登録の処理（未来日付は不可）", "admin/src/server/contexts/shared/application/usecases/delete-balance-snapshot-usecase.ts": "残高削除の処理", "admin/src/server/contexts/shared/infrastructure/repositories/prisma-balance-snapshot.repository.ts": "残高を DB に読み書き", "admin/src/app/(auth)/upload-csv/page.tsx": "CSV アップロード画面", "admin/src/client/components/csv-upload/": "アップロードとプレビューの部品", "admin/src/server/contexts/data-import/presentation/actions/preview-csv.ts": "CSV を読んでプレビューを返す", "admin/src/server/contexts/data-import/presentation/actions/upload-csv.ts": "プレビューした取引を保存する", "admin/src/server/contexts/data-import/application/usecases/preview-mf-csv-usecase.ts": "MF CSV をプレビュー用の取引にする", "admin/src/server/contexts/data-import/application/usecases/save-preview-transactions-usecase.ts": "取引を保存して公開サイトに知らせる", "admin/src/server/contexts/data-import/domain/services/encoding-converter.ts": "Shift_JIS を UTF-8 に変換", "admin/src/server/contexts/data-import/domain/services/transaction-validator.ts": "取引のおかしな行を見つける", "admin/src/server/contexts/data-import/domain/services/preview-stats-calculator.ts": "プレビューの件数集計", "admin/src/server/contexts/data-import/domain/models/preview-transaction.ts": "プレビュー用の取引のモデル", "admin/src/server/contexts/data-import/infrastructure/mf/mf-csv-loader.ts": "MF CSV を読みこむ", "admin/src/server/contexts/data-import/infrastructure/mf/mf-record-converter.ts": "MF の 1 行を取引の形に変換", "admin/src/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository.ts": "取引を DB に読み書き", "admin/src/server/contexts/shared/infrastructure/services/webapp-cache-invalidator.ts": "公開サイトのキャッシュを無効化", "admin/src/app/(auth)/transactions/page.tsx": "取引一覧画面", "admin/src/app/(auth)/bulk-delete-transactions/page.tsx": "取引の一括削除画面", "admin/src/app/api/transactions/route.ts": "取引一覧の API", "admin/src/app/api/transactions/search-by-nos/route.ts": "取引No での検索 API", "admin/src/client/components/transactions/": "取引一覧の部品", "admin/src/server/contexts/data-import/presentation/actions/delete-transaction.ts": "取引を 1 件削除する", "admin/src/server/contexts/data-import/presentation/actions/bulk-delete-transactions.ts": "取引をまとめて削除する", "admin/src/server/contexts/data-import/presentation/actions/delete-all-transactions.ts": "全取引を削除する", "admin/src/server/contexts/data-import/presentation/loaders/load-transactions-by-nos.ts": "取引No で取引を探す", "admin/src/server/contexts/shared/presentation/actions/clear-webapp-cache.ts": "公開サイトのキャッシュを消す", "admin/src/server/contexts/data-import/application/usecases/get-transactions-usecase.ts": "取引一覧取得の処理", "admin/src/server/contexts/data-import/application/usecases/delete-all-transactions-usecase.ts": "全取引削除の処理", "admin/src/server/contexts/shared/application/usecases/clear-webapp-cache-usecase.ts": "キャッシュ消去の処理", "admin/src/app/(auth)/sync-export/page.tsx": "同期用の書き出し画面", "admin/src/app/(auth)/sync-import/page.tsx": "同期用の取りこみ画面", "admin/src/app/api/export-organization-sync/route.ts": "同期用 JSON を書き出す API", "admin/src/client/components/sync-export/": "書き出しの部品", "admin/src/client/components/sync-import/": "取りこみの部品", "admin/src/server/contexts/data-import/presentation/actions/prepare-sync-import-upload.ts": "アップロード先の署名 URL を発行", "admin/src/server/contexts/data-import/presentation/actions/preview-sync-import.ts": "取りこみの試し実行（DB は変えない）", "admin/src/server/contexts/data-import/presentation/actions/run-sync-import.ts": "取りこみを実行する", "admin/src/server/contexts/shared/application/usecases/export-organization-sync-usecase.ts": "団体 1 件分を同期用の形にする", "admin/src/server/contexts/data-import/application/usecases/prepare-sync-import-upload-usecase.ts": "アップロード先発行の処理", "admin/src/server/contexts/data-import/application/usecases/preview-organization-sync-import-usecase.ts": "試し実行の処理", "admin/src/server/contexts/data-import/application/usecases/import-organization-sync-usecase.ts": "同期用 JSON で団体のデータを置き換える", "admin/src/server/contexts/shared/infrastructure/repositories/prisma-organization-sync-export.repository.ts": "同期用データを DB から集める", "admin/src/server/contexts/data-import/infrastructure/storage/supabase-sync-import-file-storage.ts": "同期用 JSON を Storage から読む", "admin/src/app/(auth)/export-report/page.tsx": "報告書エクスポート画面", "admin/src/app/api/export-report/route.ts": "報告書 XML を返す API", "admin/src/client/components/export-report/": "エクスポート画面の部品", "admin/src/server/contexts/report/presentation/loaders/report-preview-loader.ts": "XML のプレビューを作る", "admin/src/server/contexts/report/presentation/actions/update-grant-expenditure-flag.ts": "交付金フラグを更新する", "admin/src/server/contexts/report/application/usecases/xml-export-usecase.ts": "報告書 XML を作る", "admin/src/server/contexts/report/application/usecases/update-grant-expenditure-flag-usecase.ts": "交付金フラグ更新の処理", "admin/src/server/contexts/report/application/services/income-assembler.ts": "収入の様式を組み立てる", "admin/src/server/contexts/report/application/services/expense-assembler.ts": "支出の様式を組み立てる", "admin/src/server/contexts/report/application/services/donation-assembler.ts": "寄附の様式を組み立てる", "admin/src/server/contexts/report/domain/services/report-serializer.ts": "報告書全体を XML にする", "admin/src/server/contexts/report/domain/services/income-serializer.ts": "収入の様式を XML にする", "admin/src/server/contexts/report/domain/services/expense-serializer.ts": "支出の様式を XML にする", "admin/src/server/contexts/report/domain/services/donation-serializer.ts": "寄附の様式を XML にする", "admin/src/server/contexts/report/domain/services/summary-serializer.ts": "総括表を XML にする", "admin/src/server/contexts/report/domain/models/grant-expenditure-rules.ts": "交付金フラグを変えてよいかの判定", "admin/src/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository.ts": "報告書用に取引を読む", "admin/src/app/(auth)/counterparts/page.tsx": "取引先の一覧画面", "admin/src/app/(auth)/counterparts/[id]/page.tsx": "取引先の詳細画面", "admin/src/client/components/counterparts/": "取引先の部品", "admin/src/server/contexts/report/presentation/actions/create-counterpart.ts": "取引先を作る", "admin/src/server/contexts/report/presentation/actions/update-counterpart.ts": "取引先を更新する", "admin/src/server/contexts/report/presentation/actions/delete-counterpart.ts": "取引先を削除する", "admin/src/server/contexts/report/presentation/actions/search-counterpart-address.ts": "AI で住所の候補を探す", "admin/src/server/contexts/report/presentation/loaders/counterparts-loader.ts": "取引先の一覧を取る", "admin/src/server/contexts/report/presentation/loaders/counterpart-detail-loader.ts": "取引先の詳細を取る", "admin/src/server/contexts/report/application/usecases/create-counterpart-usecase.ts": "取引先作成の処理", "admin/src/server/contexts/report/application/usecases/update-counterpart-usecase.ts": "取引先更新の処理", "admin/src/server/contexts/report/application/usecases/delete-counterpart-usecase.ts": "取引先削除の処理", "admin/src/server/contexts/report/application/usecases/search-counterpart-address-usecase.ts": "住所検索の処理（AI）", "admin/src/server/contexts/report/application/usecases/get-counterparts-usecase.ts": "取引先一覧取得の処理", "admin/src/server/contexts/report/application/usecases/get-counterpart-detail-usecase.ts": "取引先詳細取得の処理", "admin/src/server/contexts/report/application/usecases/get-counterpart-transactions-usecase.ts": "取引先に紐づく取引を取る", "admin/src/server/contexts/report/domain/models/counterpart.ts": "取引先のモデル", "admin/src/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository.ts": "取引先を DB に読み書き", "admin/src/server/contexts/report/infrastructure/llm/vercel-ai-gateway.ts": "Vercel AI 経由で LLM を呼ぶ", "admin/src/server/contexts/report/infrastructure/llm/prompt-templates/": "住所検索のプロンプト", "admin/src/app/(auth)/assign/counterparts/page.tsx": "取引と取引先の紐付け画面", "admin/src/client/components/counterpart-assignment/": "紐付けの部品", "admin/src/server/contexts/report/presentation/actions/bulk-assign-counterpart.ts": "取引先をまとめて紐付ける", "admin/src/server/contexts/report/presentation/actions/bulk-unassign-counterpart.ts": "紐付けをまとめて外す", "admin/src/server/contexts/report/presentation/actions/suggest-counterpart.ts": "よく使う取引先を提案する", "admin/src/server/contexts/report/presentation/loaders/transactions-with-counterparts-loader.ts": "紐付け対象の取引を取る", "admin/src/server/contexts/report/application/usecases/bulk-assign-counterpart-usecase.ts": "一括紐付けの処理", "admin/src/server/contexts/report/application/usecases/bulk-unassign-counterpart-usecase.ts": "一括解除の処理", "admin/src/server/contexts/report/application/usecases/suggest-counterpart-usecase.ts": "取引先提案の処理", "admin/src/server/contexts/report/application/usecases/get-transactions-with-counterparts-usecase.ts": "紐付け対象の取引取得の処理", "admin/src/server/contexts/report/application/services/counterpart-suggester.ts": "過去の紐付けから候補を出す", "admin/src/server/contexts/report/domain/models/counterpart-assignment-rules.ts": "紐付けが必要な科目のルール", "admin/src/server/contexts/report/infrastructure/repositories/prisma-transaction-counterpart.repository.ts": "取引と取引先の紐付けを DB に読み書き", "admin/src/app/(auth)/donors/page.tsx": "寄附者の一覧画面", "admin/src/app/(auth)/assign/donors/page.tsx": "取引と寄附者の紐付け画面", "admin/src/app/(auth)/import-donors/page.tsx": "寄附者 CSV の取りこみ画面", "admin/src/client/components/donors/": "寄附者の部品", "admin/src/client/components/donor-assignment/": "寄附者紐付けの部品", "admin/src/client/components/donor-csv-import/": "寄附者 CSV 取りこみの部品", "admin/src/server/contexts/report/presentation/actions/create-donor.ts": "寄附者を作る", "admin/src/server/contexts/report/presentation/actions/update-donor.ts": "寄附者を更新する", "admin/src/server/contexts/report/presentation/actions/delete-donor.ts": "寄附者を削除する", "admin/src/server/contexts/report/presentation/actions/bulk-assign-donor.ts": "寄附者をまとめて紐付ける", "admin/src/server/contexts/report/presentation/actions/preview-donor-csv.ts": "寄附者 CSV をプレビューする", "admin/src/server/contexts/report/presentation/actions/import-donor-csv.ts": "寄附者 CSV を取りこむ", "admin/src/server/contexts/report/presentation/loaders/donors-loader.ts": "寄附者の一覧を取る", "admin/src/server/contexts/report/presentation/loaders/transactions-with-donors-loader.ts": "紐付け対象の取引を取る", "admin/src/server/contexts/report/application/usecases/create-donor-usecase.ts": "寄附者作成の処理", "admin/src/server/contexts/report/application/usecases/update-donor-usecase.ts": "寄附者更新の処理", "admin/src/server/contexts/report/application/usecases/delete-donor-usecase.ts": "寄附者削除の処理", "admin/src/server/contexts/report/application/usecases/assign-donor-usecase.ts": "寄附者紐付けの処理", "admin/src/server/contexts/report/application/usecases/preview-donor-csv-usecase.ts": "寄附者 CSV プレビューの処理", "admin/src/server/contexts/report/application/usecases/import-donor-csv-usecase.ts": "寄附者 CSV 取りこみの処理", "admin/src/server/contexts/report/application/usecases/get-donors-usecase.ts": "寄附者一覧取得の処理", "admin/src/server/contexts/report/application/usecases/get-transactions-with-donors-usecase.ts": "紐付け対象の取引取得の処理", "admin/src/server/contexts/report/domain/models/donor.ts": "寄附者のモデル（個人・法人など）", "admin/src/server/contexts/report/domain/models/donor-assignment-rules.ts": "紐付けが必要な科目のルール", "admin/src/server/contexts/report/domain/services/donor-csv-validator.ts": "寄附者 CSV の行を検証する", "admin/src/server/contexts/report/infrastructure/repositories/prisma-donor.repository.ts": "寄附者を DB に読み書き", "admin/src/server/contexts/report/infrastructure/repositories/prisma-transaction-donor.repository.ts": "取引と寄附者の紐付けを DB に読み書き", "admin/src/server/contexts/report/infrastructure/donor-csv/": "寄附者 CSV の読みこみ", "admin/src/app/(auth)/politicians/[id]/books/page.tsx": "帳簿の一覧画面", "admin/src/client/components/books/": "帳簿の部品", "admin/src/server/contexts/research-fund/presentation/actions/manage-book.ts": "帳簿を作る・更新する", "admin/src/server/contexts/research-fund/presentation/loaders/load-books.ts": "帳簿の一覧を取る", "admin/src/server/contexts/research-fund/application/usecases/create-book-usecase.ts": "帳簿作成の処理", "admin/src/server/contexts/research-fund/application/usecases/update-book-usecase.ts": "帳簿更新の処理", "admin/src/server/contexts/research-fund/application/usecases/list-books-usecase.ts": "帳簿一覧取得の処理", "admin/src/server/contexts/research-fund/domain/models/book.ts": "帳簿のモデル（活用方針など）", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-book.repository.ts": "帳簿を DB に読み書き", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/grants/page.tsx": "交付の登録画面", "admin/src/server/contexts/research-fund/presentation/actions/register-grant.ts": "支給を登録する", "admin/src/server/contexts/research-fund/presentation/loaders/load-grants.ts": "登録済みの支給を取る", "admin/src/server/contexts/research-fund/application/usecases/register-grant-usecase.ts": "支給の仕訳を確認済で作る", "admin/src/server/contexts/research-fund/application/usecases/list-grants-usecase.ts": "支給一覧取得の処理", "admin/src/server/contexts/research-fund/domain/services/grant-journal-builder.ts": "支給の仕訳を組み立てる", "admin/src/server/contexts/research-fund/domain/models/grant-registration.ts": "支給 1 件分の登録内容", "admin/src/server/contexts/research-fund/domain/models/grant-schedule.ts": "登録済みの支給 1 件", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-grant.repository.ts": "支給を DB に読み書き", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/scan/page.tsx": "書類スキャン画面", "admin/src/client/components/research-fund/DocumentScan.tsx": "アップロードと進捗の表示", "admin/src/server/contexts/research-fund/presentation/actions/create-scan-batch.ts": "書類を上げてバッチとジョブを作る", "admin/src/server/contexts/research-fund/presentation/actions/process-scan-jobs.ts": "待機中のジョブを少しずつ処理する", "admin/src/server/contexts/research-fund/presentation/actions/retry-scan-job.ts": "失敗したジョブを待機に戻す", "admin/src/server/contexts/research-fund/presentation/actions/reread-scan-documents.ts": "指示つきで読み直す", "admin/src/server/contexts/research-fund/presentation/loaders/load-scan.ts": "スキャンの状況を取る", "admin/src/server/contexts/research-fund/application/usecases/create-scan-batch-usecase.ts": "書類を保存してジョブを作る", "admin/src/server/contexts/research-fund/application/usecases/process-scan-jobs-usecase.ts": "ジョブを AI で読み取り、下書き仕訳にする", "admin/src/server/contexts/research-fund/application/usecases/retry-scan-job-usecase.ts": "ジョブ再実行の処理", "admin/src/server/contexts/research-fund/application/usecases/create-reread-batch-usecase.ts": "読み直しバッチを作る", "admin/src/server/contexts/research-fund/application/usecases/list-scan-batches-usecase.ts": "バッチを進捗つきで取る", "admin/src/server/contexts/research-fund/application/usecases/register-document-usecase.ts": "書類 1 枚を登録する", "admin/src/server/contexts/research-fund/domain/services/scan-journal-builder.ts": "読み取り結果を下書き仕訳にする", "admin/src/server/contexts/research-fund/domain/services/issuer-payee-matcher.ts": "発行元と支払先を照合する（表記ゆれ吸収）", "admin/src/server/contexts/research-fund/domain/services/receipt-extraction-prompt.ts": "読み取りプロンプトを組み立てる", "admin/src/server/contexts/research-fund/domain/models/extracted-receipt.ts": "AI が読み取った領収書のモデル", "admin/src/server/contexts/research-fund/domain/models/scan-job.ts": "スキャンジョブのモデル（状態と上限）", "admin/src/server/contexts/research-fund/domain/models/scan-batch.ts": "スキャンバッチのモデル（上限 30 枚）", "admin/src/server/contexts/research-fund/infrastructure/llm/vercel-ai-receipt-extraction-gateway.ts": "Claude で領収書を JSON に読み取る", "admin/src/server/contexts/research-fund/infrastructure/storage/supabase-document-storage.ts": "書類を Storage に保存", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-scan.repository.ts": "バッチとジョブを DB に読み書き", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-document.repository.ts": "書類を DB に読み書き", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/entries/page.tsx": "仕訳の確認画面", "admin/src/app/api/research-fund/documents/[documentId]/route.ts": "書類（領収書）を返す API", "admin/src/client/components/research-fund/JournalReview.tsx": "仕訳の確認・編集の部品", "admin/src/server/contexts/research-fund/presentation/actions/manage-journal-review.ts": "編集・確認済み・精算などの操作", "admin/src/server/contexts/research-fund/presentation/loaders/load-journal-review.ts": "仕訳の確認画面のデータを取る", "admin/src/server/contexts/research-fund/presentation/loaders/load-journal-document.ts": "書類 1 件を取る", "admin/src/server/contexts/research-fund/application/usecases/save-journal-entry-usecase.ts": "仕訳を編集して保存する", "admin/src/server/contexts/research-fund/application/usecases/create-journal-entry-usecase.ts": "仕訳を手で作る（下書き）", "admin/src/server/contexts/research-fund/application/usecases/approve-journal-entries-usecase.ts": "選んだ下書きをまとめて確認済に", "admin/src/server/contexts/research-fund/application/usecases/revert-journal-entry-to-draft-usecase.ts": "確認済を下書きに戻す", "admin/src/server/contexts/research-fund/application/usecases/discard-journal-entry-usecase.ts": "仕訳を破棄する", "admin/src/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase.ts": "支払先をまとめて設定する", "admin/src/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase.ts": "立替者をまとめて設定する", "admin/src/server/contexts/research-fund/application/usecases/settle-journal-entries-usecase.ts": "立替をまとめて精算済に", "admin/src/server/contexts/research-fund/application/usecases/assign-receipt-numbers-usecase.ts": "領収書等番号を振る", "admin/src/server/contexts/research-fund/application/usecases/set-receipt-absence-reason-usecase.ts": "領収書が無い理由を書く", "admin/src/server/contexts/research-fund/application/usecases/list-journal-review-usecase.ts": "確認画面の一覧を取る", "admin/src/server/contexts/research-fund/domain/models/journal-entry.ts": "仕訳のモデル（下書き→確認済→公開済）", "admin/src/server/contexts/research-fund/domain/models/journal-review.ts": "確認できるかの判定", "admin/src/server/contexts/research-fund/domain/models/journal-posting.ts": "借方・貸方の行を組み立てる", "admin/src/server/contexts/research-fund/domain/models/receipt-number.ts": "領収書等番号の採番ルール", "admin/src/server/contexts/research-fund/domain/models/advance.ts": "立替のルール", "admin/src/server/contexts/research-fund/domain/models/receipt-absence.ts": "領収書が無い理由のルール", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository.ts": "確認画面用に DB を読み書き", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-receipt-number.repository.ts": "採番済みの番号を DB に読み書き", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/payees/page.tsx": "支払先の管理画面", "admin/src/client/components/research-fund/PayeeList.tsx": "支払先の一覧と編集", "admin/src/server/contexts/research-fund/presentation/actions/manage-payees.ts": "支払先を作る・編集する", "admin/src/server/contexts/research-fund/presentation/loaders/load-payees.ts": "支払先の一覧を取る", "admin/src/server/contexts/research-fund/application/usecases/save-payee-usecase.ts": "支払先保存の処理", "admin/src/server/contexts/research-fund/application/usecases/create-payee-and-link-usecase.ts": "支払先を作って仕訳に紐付ける", "admin/src/server/contexts/research-fund/application/usecases/list-payees-usecase.ts": "支払先一覧取得の処理（件数つき）", "admin/src/server/contexts/research-fund/domain/models/payee.ts": "支払先のルール", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-payee.repository.ts": "支払先を DB に読み書き", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/expenditure-groups/page.tsx": "使い道の説明（支出群）の一覧画面", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/expenditure-groups/new/page.tsx": "支出群の新規作成画面", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/expenditure-groups/[groupId]/page.tsx": "支出群の編集画面", "admin/src/client/components/research-fund/ExpenditureGroupList.tsx": "支出群の一覧", "admin/src/client/components/research-fund/ExpenditureGroupForm.tsx": "支出群の入力フォーム", "admin/src/server/contexts/research-fund/presentation/actions/manage-expenditure-groups.ts": "保存・削除・並べ替え", "admin/src/server/contexts/research-fund/presentation/loaders/load-expenditure-groups.ts": "支出群のデータを取る", "admin/src/server/contexts/research-fund/application/usecases/save-expenditure-group-usecase.ts": "支出群保存の処理", "admin/src/server/contexts/research-fund/application/usecases/delete-expenditure-group-usecase.ts": "支出群削除の処理", "admin/src/server/contexts/research-fund/application/usecases/reorder-expenditure-groups-usecase.ts": "支出群の並べ替え", "admin/src/server/contexts/research-fund/application/usecases/save-usage-policy-usecase.ts": "活用方針を保存する", "admin/src/server/contexts/research-fund/application/usecases/list-expenditure-groups-usecase.ts": "支出群一覧取得（金額は自動集計）", "admin/src/server/contexts/research-fund/application/usecases/get-expenditure-group-form-usecase.ts": "フォームのデータを取る", "admin/src/server/contexts/research-fund/domain/models/expenditure-group.ts": "支出群の入力ルール", "admin/src/server/contexts/research-fund/domain/services/expense-journal-builder.ts": "支出の仕訳を組み立てる", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-expenditure-group.repository.ts": "支出群を DB に読み書き", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/prompts/page.tsx": "AI への指示（プロンプト）画面", "admin/src/client/components/research-fund/PromptEditor.tsx": "プロンプトの編集部品", "admin/src/server/contexts/research-fund/presentation/actions/manage-prompt.ts": "プロンプトを保存・巻き戻す", "admin/src/server/contexts/research-fund/presentation/actions/test-prompt.ts": "編集中のプロンプトで試し読み", "admin/src/server/contexts/research-fund/presentation/loaders/load-prompts.ts": "プロンプトの版履歴を取る", "admin/src/server/contexts/research-fund/application/usecases/save-prompt-usecase.ts": "新しい版として保存", "admin/src/server/contexts/research-fund/application/usecases/rollback-prompt-usecase.ts": "過去の版に戻す", "admin/src/server/contexts/research-fund/application/usecases/test-prompt-usecase.ts": "書類 1 枚で試し読みする", "admin/src/server/contexts/research-fund/application/usecases/get-prompt-overview-usecase.ts": "版履歴と本文を取る", "admin/src/server/contexts/research-fund/application/usecases/list-prompt-test-documents-usecase.ts": "試し読みに使う書類の候補", "admin/src/server/contexts/research-fund/domain/models/prompt.ts": "プロンプトの版のモデル", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-prompt.repository.ts": "プロンプトを DB に読み書き", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/publish/page.tsx": "公開画面", "admin/src/client/components/research-fund/JournalPublication.tsx": "公開の操作部品", "admin/src/server/contexts/research-fund/presentation/actions/publish-journal-entries.ts": "仕訳を公開する", "admin/src/server/contexts/research-fund/presentation/loaders/load-publication.ts": "公開画面のデータを取る", "admin/src/server/contexts/research-fund/application/usecases/publish-journal-entries-usecase.ts": "仕訳を公開する処理", "admin/src/server/contexts/research-fund/application/usecases/unpublish-journal-entry-usecase.ts": "公開を取り下げる", "admin/src/server/contexts/research-fund/application/usecases/get-publication-snapshot-usecase.ts": "公開前後の集計を作る", "admin/src/server/contexts/research-fund/domain/models/publication.ts": "公開候補のモデル", "admin/src/server/contexts/research-fund/domain/models/journal-entry-hash.ts": "重複検知の hash", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-publication.repository.ts": "公開状態を DB に読み書き", "admin/src/app/(auth)/politicians/[id]/books/[bookId]/submission/page.tsx": "議員課提出画面", "admin/src/app/api/research-fund/books/[bookId]/submission-ledger/route.ts": "提出用 CSV を返す API", "admin/src/server/contexts/research-fund/presentation/loaders/load-submission-ledger.ts": "提出画面のデータを取る", "admin/src/server/contexts/research-fund/application/usecases/get-submission-ledger-usecase.ts": "提出前に足りない項目を調べる", "admin/src/server/contexts/research-fund/application/usecases/export-submission-ledger-csv-usecase.ts": "院のフォーマットで CSV にする", "admin/src/server/contexts/research-fund/domain/models/submission-ledger.ts": "提出用帳簿のモデル（衆・参）", "admin/src/server/contexts/research-fund/infrastructure/repositories/prisma-submission-ledger.repository.ts": "提出用に仕訳を読む"};
+
+const disp = (p, main) => { const c = ctxOf(p); const b = base(p); if (!c) return p.replace(/^(webapp|admin)\/src\//, ""); return c === main ? b : c + " / " + b; };
+function renderLookup(target) {
+  target.replaceChildren();
+  const groups = [];
+  for (const f of FEATURES) {
+    let g = groups.find((x) => x.name === f.group);
+    if (!g) groups.push((g = { name: f.group, items: [] }));
+    g.items.push(f);
+  }
+  const isRoute = (p) => /route\.ts$/.test(p);
+  const STAGES = (f) => [
+    ["View（画面）", "l-v", [...(f.page || []).filter((p) => !isRoute(p)), ...(f.ui || [])].map((p) => [p, ""])],
+    ["Controller（入口）", "l-c", [...(f.page || []).filter(isRoute), ...(f.pres || [])].map((p) => [p, /\/actions\//.test(p) ? "action" : /\/loaders\//.test(p) ? "loader" : "API"])],
+    ["Model（処理・ルール・データ）", "l-m", [...(f.app_ || []).map((p) => [p, "処理"]), ...(f.dom || []).map((p) => [p, "ルール"]), ...(f.inf || []).map((p) => [p, "データ"])]],
+  ];
+  for (const g of groups) {
+    const wrap = el("div", { class: "lk-group" });
+    wrap.append(el("h3", { class: "lk-h" }, g.items[0].groupLabel || g.name));
+    for (const f of g.items) {
+      const card = el("article", { class: "feat" });
+      const head = el("header", { class: "fh" });
+      const icw = el("span", { class: "icw c-" + (f.ctx || "shared") });
+      icw.append(iconSvg(f.icon));
+      const tx = el("div");
+      tx.append(el("b", null, f.name), el("span", { class: "u" }, f.url));
+      if (f.desc) tx.append(el("span", { class: "fd" }, f.desc));
+      head.append(icw, tx);
+      const body = el("div", { class: "fb" });
+      const left = el("div", { class: "fl" });
+      left.append(head);
+      body.append(left);
+      if (SHOTS[f.orig]) {
+        const src = "screens/" + SHOTS[f.orig] + ".jpg";
+        const a = el("a", { class: "fshot zoomable", href: src, title: "画面を大きく見る" });
+        a.append(el("img", { src, alt: f.name + "の画面", loading: "lazy" }));
+        left.append(a);
+      }
+      const chain = el("ol", { class: "chain" });
+      for (const [label, cls, items] of STAGES(f)) {
+        if (!items.length) continue;
+        const st = el("li", { class: "stg " + cls });
+        st.append(el("h5", null, label));
+        const ul = el("ul", { class: "pl" });
+        for (const [p, tag] of items) {
+          const li = el("li");
+          const pc = el("span", { class: "pc" });
+          if (tag) pc.append(el("span", { class: "tag t-" + tag }, tag));
+          const b = el("button", { type: "button", class: "path", title: p }, disp(p, f.ctx));
+          b.dataset.path = p;
+          pc.append(b);
+          li.append(pc, el("span", { class: "sum" }, SUM[p] || ""));
+          ul.append(li);
+        }
+        st.append(ul);
+        chain.append(st);
+      }
+      body.append(chain);
+      card.append(body);
+      wrap.append(card);
+    }
+    target.append(wrap);
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest(".path");
+  if (!b) return;
+  const select = () => { const r = document.createRange(); r.selectNodeContents(b); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); };
+  const mark = () => { b.classList.add("copied"); setTimeout(() => b.classList.remove("copied"), 1200); };
+  try { navigator.clipboard.writeText(b.dataset.path).then(mark, select); } catch (err) { select(); }
+});
+
+const results = document.getElementById("results");
+if (results) renderLookup(results);
+
+function renderGallery(target, prefix) {
+  const groups = [];
+  for (const s of SCREENS.filter((x) => x.g.startsWith(prefix))) {
+    let g = groups.find((x) => x.name === s.g);
+    if (!g) groups.push((g = { name: s.g, items: [] }));
+    g.items.push(s);
+  }
+  for (const g of groups) {
+    if (groups.length > 1 || prefix !== "公開サイト") target.append(el("h4", { class: "shots-h" }, g.name.replace(/^管理画面：/, "")));
+    const wrap = el("div", { class: "shots" });
+    for (const s of g.items) {
+      const fig = el("figure", { class: "shot" });
+      const src = "screens/" + s.f + ".jpg";
+      const a = el("a", { href: src, title: "画面を大きく見る" });
+      a.append(el("img", { src, alt: s.n + "の画面", loading: "lazy" }));
+      const cap = el("figcaption");
+      cap.append(el("b", null, s.n), el("span", null, s.u));
+      if (s.src) cap.append(el("i", null, "本番サイト"));
+      fig.append(a, cap);
+      wrap.append(fig);
+    }
+    target.append(wrap);
+  }
+}
+const gw = document.getElementById("gallery-web");
+if (gw) renderGallery(gw, "公開サイト");
+const ga = document.getElementById("gallery-admin");
+if (ga) renderGallery(ga, "管理画面");
+
+</script>
+
+<script>
+// サイド目次: いま読んでいる章を強調する
+(() => {
+  const links = [...document.querySelectorAll('.side nav.toc a')];
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const io = new IntersectionObserver(es => {
+    for (const e of es) if (e.isIntersecting) { links.forEach(a => a.classList.remove('on')); map.get(e.target.id)?.classList.add('on'); }
+  }, { rootMargin: '-80px 0px -65% 0px' });
+  document.querySelectorAll('section.part[id]').forEach(s => map.has(s.id) && io.observe(s));
+})();
+</script>
+
+<dialog class="viewer" id="viewer" aria-label="画面の拡大表示">
+  <div class="vbar"><b id="vt"></b><button type="button" data-z="-1" aria-label="縮小">－</button><span class="zv" id="zv">100%</span><button type="button" data-z="1" aria-label="拡大">＋</button><button type="button" data-z="fit">幅に合わせる</button><button type="button" data-z="close">閉じる</button></div>
+  <div class="vbox" id="vbox"><img id="vimg" alt=""></div>
+</dialog>
+<script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+<script>
+// 画面遷移図：拡大縮小・ドラッグ移動（@panzoom/panzoom）
+(() => {
+  const small = matchMedia("(max-width: 760px)");
+  document.querySelectorAll(".pz").forEach((pz) => {
+    const vp = pz.querySelector(".pz-vp"), t = vp.firstElementChild, v = pz.querySelector(".pz-v");
+    if (!window.Panzoom || small.matches) { vp.classList.add("nojs"); return; }
+    const p = Panzoom(t, { canvas: true, origin: "0 0", minScale: 0.15, maxScale: 2, step: 0.25, animate: true });
+    const show = (s) => (v.textContent = Math.round(s * 100) + "%");
+    t.addEventListener("panzoomchange", (e) => show(e.detail.scale));
+    const fit = (resize) => {
+      const s = Math.min(1, vp.clientWidth / t.scrollWidth);
+      if (resize) vp.style.height = Math.min(760, Math.ceil(t.scrollHeight * s) + 4) + "px";
+      const s2 = resize ? s : Math.min(s, vp.clientHeight / t.scrollHeight);
+      p.zoom(s2, { animate: false }); setTimeout(() => p.pan(0, 0, { animate: false }));
+      show(s2);
+    };
+    vp.style.height = Math.min(760, t.scrollHeight + 4) + "px";
+    show(1);
+    pz.querySelector(".pz-bar").addEventListener("click", (e) => {
+      const k = e.target.closest("button")?.dataset.pz;
+      if (k === "in") p.zoomIn(); else if (k === "out") p.zoomOut(); else if (k === "fit") fit(false);
+      else if (k === "reset") { p.zoom(1, { animate: false }); setTimeout(() => p.pan(0, 0, { animate: false })); }
+    });
+    vp.addEventListener("wheel", (e) => { if (e.ctrlKey || e.metaKey) p.zoomWithWheel(e); }, { passive: false });
+    // ドラッグ後のクリックで拡大表示が開かないようにする
+    let sx = 0, sy = 0;
+    vp.addEventListener("pointerdown", (e) => { sx = e.clientX; sy = e.clientY; }, true);
+    vp.addEventListener("click", (e) => { if (Math.hypot(e.clientX - sx, e.clientY - sy) > 5) { e.preventDefault(); e.stopPropagation(); } }, true);
+  });
+})();
+</script>
+<script>
+(() => {
+  const dlg = document.getElementById("viewer"), img = document.getElementById("vimg"), box = document.getElementById("vbox"), zv = document.getElementById("zv");
+  let z = 1;
+  const fit = () => (box.clientWidth - 24) / (img.naturalWidth || 1);
+  const set = (nz) => { z = Math.min(4, Math.max(0.2, nz)); img.style.width = Math.round(img.naturalWidth * z) + "px"; zv.textContent = Math.round(z * 100) + "%"; };
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a.zoomable");
+    if (!a) return;
+    e.preventDefault();
+    const im = a.querySelector("img");
+    document.getElementById("vt").textContent = im ? im.alt.replace(/の画面$/, "") : "";
+    img.onload = () => { set(fit()); box.scrollTo(0, 0); };
+    img.src = a.getAttribute("href");
+    dlg.showModal();
+  });
+  dlg.querySelector(".vbar").addEventListener("click", (e) => {
+    const v = e.target.closest("button")?.dataset.z;
+    if (!v) return;
+    if (v === "close") dlg.close(); else if (v === "fit") set(fit()); else set(z * (v === "1" ? 1.25 : 0.8));
+  });
+  box.addEventListener("wheel", (e) => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); set(z * (e.deltaY < 0 ? 1.1 : 0.9)); }, { passive: false });
+  let sx = 0, sy = 0, drag = false;
+  box.addEventListener("pointerdown", (e) => { drag = true; sx = e.clientX + box.scrollLeft; sy = e.clientY + box.scrollTop; box.classList.add("drag"); });
+  addEventListener("pointermove", (e) => { if (drag) box.scrollTo(sx - e.clientX, sy - e.clientY); });
+  addEventListener("pointerup", () => { drag = false; box.classList.remove("drag"); });
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+})();
+</script>
+</body>
+</html>
